@@ -5,16 +5,7 @@ import {
   Typography,
   Card,
   CardContent,
-  IconButton,
-  List,
-  ListItem,
-  ListItemText,
-  ListItemIcon,
   Avatar,
-  useTheme,
-  Button,
-  Divider,
-  Chip,
   CircularProgress
 } from '@mui/material';
 import { api } from '../services/api';
@@ -22,12 +13,7 @@ import {
   TrendingUp,
   TrendingDown,
   AccountBalanceWallet,
-  Notifications,
-  Add as AddIcon,
   ShoppingBag,
-  Restaurant,
-  DirectionsCar,
-  HomeWork,
   AccountBalance,
   CreditCard
 } from '@mui/icons-material';
@@ -41,10 +27,7 @@ import {
   ResponsiveContainer,
   PieChart,
   Pie,
-  Cell,
-  BarChart,
-  Bar,
-  Legend
+  Cell
 } from 'recharts';
 import { motion } from 'framer-motion';
 
@@ -63,9 +46,12 @@ const formatCurrency = (value: number): string => {
   return new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(value);
 };
 
-// Función completa para tooltips y mostrar el valor completo
-const formatCurrencyFull = (value: number): string => {
-  return new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(value);
+// Tooltip formatter helper
+const formatTooltipValue = (value: any): string => {
+  if (typeof value === 'number') {
+    return new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(value);
+  }
+  return String(value);
 };
 
 const EmptyStateChart = ({ message = "No hay datos para mostrar" }) => (
@@ -90,7 +76,6 @@ const EmptyStateChart = ({ message = "No hay datos para mostrar" }) => (
 );
 
 const SummaryCard = ({ title, value, icon, trend, color, highlighted = false }: any) => {
-  const theme = useTheme();
   return (
     <motion.div whileHover={{ y: -5 }} transition={{ duration: 0.2 }} style={{ height: '100%', width: '100%' }}>
       <Card sx={{
@@ -136,7 +121,7 @@ const SummaryCard = ({ title, value, icon, trend, color, highlighted = false }: 
               height: { xs: 48, md: 56, lg: 64 },
               boxShadow: highlighted ? 'none' : `0 8px 16px ${color}15`
             }}>
-              {React.cloneElement(icon as React.ReactElement, { sx: { fontSize: { xs: 24, md: 28, lg: 32 } } })}
+              {React.cloneElement(icon as React.ReactElement<any>, { sx: { fontSize: { xs: 24, md: 28, lg: 32 } } })}
             </Avatar>
             {trend && (
               <Box sx={{ 
@@ -179,7 +164,6 @@ const SummaryCard = ({ title, value, icon, trend, color, highlighted = false }: 
 };
 
 const Dashboard = () => {
-  const theme = useTheme();
   const [stats, setStats] = React.useState<any>(null);
   const [loading, setLoading] = React.useState(true);
 
@@ -232,7 +216,7 @@ const Dashboard = () => {
       {/* SUMMARY CARDS */}
       <Box sx={{ overflow: 'hidden', mb: { xs: 4, md: 6 } }}>
         <Grid container spacing={{ xs: 2, md: 4 }}>
-          <Grid item xs={6} sm={6} md={4}>
+          <Grid size={{ xs: 6, sm: 6, md: 4 }}>
             <SummaryCard
               title="Patrimonio Neto"
               value={stats?.totalBalance || 0}
@@ -241,7 +225,7 @@ const Dashboard = () => {
               highlighted
             />
           </Grid>
-          <Grid item xs={6} sm={6} md={4}>
+          <Grid size={{ xs: 6, sm: 6, md: 4 }}>
             <SummaryCard
               title="Gastos del Mes"
               value={stats?.monthlyExpenses || 0}
@@ -249,7 +233,7 @@ const Dashboard = () => {
               color="#FDB022"
             />
           </Grid>
-          <Grid item xs={6} sm={6} md={4}>
+          <Grid size={{ xs: 6, sm: 6, md: 4 }}>
             <SummaryCard
               title="Ahorro Mensual"
               value={stats?.monthlySavings || 0}
@@ -257,7 +241,7 @@ const Dashboard = () => {
               color="#039855"
             />
           </Grid>
-          <Grid item xs={6} sm={6} md={4}>
+          <Grid size={{ xs: 6, sm: 6, md: 4 }}>
             <SummaryCard
               title="Capital (Débito)"
               value={stats?.totalAssets || 0}
@@ -265,7 +249,7 @@ const Dashboard = () => {
               color="#00A3E0"
             />
           </Grid>
-          <Grid item xs={6} sm={6} md={4}>
+          <Grid size={{ xs: 6, sm: 6, md: 4 }}>
             <SummaryCard
               title="Deuda (Crédito)"
               value={Math.abs(stats?.totalDebt || 0)}
@@ -273,7 +257,7 @@ const Dashboard = () => {
               color="#D92D20"
             />
           </Grid>
-          <Grid item xs={6} sm={6} md={4}>
+          <Grid size={{ xs: 6, sm: 6, md: 4 }}>
             <SummaryCard
               title="Límite Crédito"
               value={stats?.creditLimit || 0}
@@ -286,7 +270,7 @@ const Dashboard = () => {
 
       <Grid container spacing={3}>
         {/* CHART: ACTIVIDAD DE GASTOS */}
-        <Grid item xs={12} md={6}>
+        <Grid size={{ xs: 12, md: 6 }}>
           <Card sx={{ height: { xs: 580, md: 450 }, borderRadius: '16px' }}>
             <CardContent sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
               <Typography variant="h6" sx={{ fontWeight: 700, mb: 3 }}>
@@ -306,7 +290,7 @@ const Dashboard = () => {
                       <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 12 }} />
                       <YAxis hide />
                       <Tooltip
-                        formatter={(value: number) => new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(value)}
+                        formatter={formatTooltipValue}
                         contentStyle={{ backgroundColor: '#111927', border: 'none', borderRadius: '12px', boxShadow: '0 8px 32px rgba(0,0,0,0.4)', color: '#fff' }}
                         itemStyle={{ color: '#00A3E0' }}
                       />
@@ -331,7 +315,7 @@ const Dashboard = () => {
         </Grid>
 
         {/* CHART: GASTOS POR CATEGORÍA */}
-        <Grid item xs={12} md={6}>
+        <Grid size={{ xs: 12, md: 6 }}>
           <Card sx={{ height: { xs: 580, md: 450 }, borderRadius: '16px' }}>
             <CardContent sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
               <Typography variant="h6" sx={{ fontWeight: 700, mb: 3 }}>
@@ -366,7 +350,7 @@ const Dashboard = () => {
                               ))}
                             </Pie>
                           <Tooltip 
-                            formatter={(value: number) => new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(value)}
+                            formatter={formatTooltipValue}
                             contentStyle={{ backgroundColor: '#111927', border: 'none', borderRadius: '12px', boxShadow: '0 8px 32px rgba(0,0,0,0.4)', color: '#fff' }}
                             itemStyle={{ color: '#fff' }}
                           />
@@ -385,7 +369,7 @@ const Dashboard = () => {
                     }}>
                       <Grid container spacing={2}>
                         {stats.expensesByCategory.map((cat: any) => (
-                          <Grid item xs={12} key={cat.name}>
+                          <Grid size={{ xs: 12 }} key={cat.name}>
                             <Box sx={{ 
                               p: 2, 
                               borderRadius: '12px', 
@@ -418,7 +402,7 @@ const Dashboard = () => {
         </Grid>
 
         {/* CHART: SALDOS POR CUENTA */}
-        <Grid item xs={12}>
+        <Grid size={{ xs: 12 }}>
           <Card sx={{ height: '100%', borderRadius: '16px' }}>
             <CardContent>
               <Typography variant="h6" sx={{ fontWeight: 700, mb: 3 }}>
@@ -445,7 +429,7 @@ const Dashboard = () => {
                               ))}
                             </Pie>
                           <Tooltip
-                            formatter={(value: number) => new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(value)}
+                            formatter={formatTooltipValue}
                             contentStyle={{ backgroundColor: '#111927', border: 'none', borderRadius: '12px', boxShadow: '0 8px 32px rgba(0,0,0,0.4)', color: '#fff' }}
                             itemStyle={{ color: '#fff' }}
                           />
@@ -463,7 +447,7 @@ const Dashboard = () => {
                     }}>
                       <Grid container spacing={2}>
                         {stats.accountBalances.filter((a: any) => a.balance > 0).sort((a: any, b: any) => b.balance - a.balance).map((acc: any) => (
-                          <Grid item xs={12} sm={6} lg={12} key={acc.name}>
+                          <Grid size={{ xs: 12, sm: 6, lg: 12 }} key={acc.name}>
                             <Box sx={{ 
                               p: 2, 
                               borderRadius: '12px', 

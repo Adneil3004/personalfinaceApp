@@ -15,7 +15,7 @@ import {
 } from '@mui/material';
 import { supabase } from '../services/supabase';
 import { useNavigate, Link as RouterLink } from 'react-router-dom';
-import { Email, Lock, Visibility, VisibilityOff, Person } from '@mui/icons-material';
+import { Email, Lock, Visibility, VisibilityOff } from '@mui/icons-material';
 
 const Register: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -115,7 +115,7 @@ const Register: React.FC = () => {
           </Box>
 
           <CardContent sx={{ mt: 6 }}>
-            <Typography variant="h4" component="h1" gutterBottom align="center" fontWeight="bold">
+            <Typography variant="h4" gutterBottom align="center" sx={{ fontWeight: 'bold' }}>
               Crear Cuenta
             </Typography>
             <Typography variant="body1" gutterBottom align="center" sx={{ mb: 4, color: 'text.secondary' }}>

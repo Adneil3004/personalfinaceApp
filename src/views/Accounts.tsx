@@ -226,7 +226,7 @@ const Accounts = () => {
         type: form.type,
         currency: form.currency,
         initial_balance,
-        credit_limit: form.type === 'credit' ? Number(form.credit_limit) : null,
+        credit_limit: form.type === 'credit' ? Number(form.credit_limit) : undefined,
         is_active: form.is_active,
       };
       if (editingId) {

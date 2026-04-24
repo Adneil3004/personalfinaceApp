@@ -14,7 +14,7 @@ import { supabase } from '../services/supabase';
 import { useAuthStore } from '../store/useAuthStore';
 import { useNavigate } from 'react-router-dom';
 
-import { Email, Lock, Visibility, VisibilityOff, AccountBalanceWallet } from '@mui/icons-material';
+import { Email, Lock, Visibility, VisibilityOff } from '@mui/icons-material';
 import { InputAdornment, IconButton } from '@mui/material';
 
 const Login: React.FC = () => {
@@ -97,7 +97,7 @@ const Login: React.FC = () => {
           </Box>
 
           <CardContent sx={{ mt: 6 }}>
-            <Typography variant="h4" component="h1" gutterBottom align="center" fontWeight="bold">
+            <Typography variant="h4" gutterBottom align="center" sx={{ fontWeight: 'bold' }}>
               FinanceControl
             </Typography>
             <Typography variant="body1" gutterBottom align="center" sx={{ mb: 4, color: 'text.secondary' }}>

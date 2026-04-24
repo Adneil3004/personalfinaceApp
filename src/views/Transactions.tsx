@@ -10,19 +10,13 @@ import {
   Button,
   List,
   ListItem,
-  ListItemIcon,
-  ListItemText,
   Avatar,
-  useTheme,
   CircularProgress,
   Alert,
-  IconButton,
-  TextareaAutosize
+  IconButton
 } from '@mui/material';
 import {
-  Save as SaveIcon,
   KeyboardArrowDown,
-  CalendarToday,
   Help,
   Home,
   ShoppingCart,
@@ -97,14 +91,11 @@ const IconMapper: Record<string, React.ReactNode> = {
 };
 
 const Transactions = () => {
-  const theme = useTheme();
   const { user } = useAuthStore();
 
   // Colores de Plataforma (Brand Identity)
   const AZURE_BLUE = '#002D72';
   const SKY_BLUE = '#00A3E0';
-  const LIGHT_GRAY = '#F3F4F6';
-  const TEXT_GRAY = '#6B7280';
 
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -273,9 +264,9 @@ const Transactions = () => {
         {editingId ? 'Editar Transacción' : 'Transacciones'}
       </Typography>
 
-      <Grid container spacing={4} alignItems="flex-start">
+      <Grid container spacing={4} sx={{ alignItems: 'flex-start' }}>
         {/* COLUMNA IZQUIERDA: FORMULARIO */}
-        <Grid item xs={12} md={5} lg={4.5} sx={{ 
+        <Grid size={{ xs: 12, md: 5, lg: 4.5 }} sx={{ 
           position: { md: 'sticky' }, 
           top: { md: 24 } 
         }}>
@@ -411,7 +402,7 @@ const Transactions = () => {
                             '& fieldset': { borderColor: 'rgba(255,255,255,0.1)' },
                           }
                         }}
-                        SelectProps={{ IconComponent: KeyboardArrowDown }}
+                        slotProps={{ select: { IconComponent: KeyboardArrowDown } }}
                       >
                         {accounts.map((acc) => (
                           <MenuItem key={acc.id} value={acc.id}>{acc.name}</MenuItem>
@@ -436,7 +427,7 @@ const Transactions = () => {
                               '& fieldset': { borderColor: 'rgba(255,255,255,0.1)' },
                             }
                           }}
-                          SelectProps={{ IconComponent: KeyboardArrowDown }}
+                          slotProps={{ select: { IconComponent: KeyboardArrowDown } }}
                         >
                           {accounts.filter(a => a.id !== accountId).map((acc) => (
                             <MenuItem key={acc.id} value={acc.id}>{acc.name}</MenuItem>
@@ -463,7 +454,7 @@ const Transactions = () => {
                               '& fieldset': { borderColor: 'rgba(255,255,255,0.1)' },
                             }
                           }}
-                          SelectProps={{ IconComponent: KeyboardArrowDown }}
+                          slotProps={{ select: { IconComponent: KeyboardArrowDown } }}
                         >
                           {categories.map((cat) => (
                             <MenuItem key={cat.id} value={cat.id} sx={{ pl: cat.parent_id ? 4 : 2 }}>{cat.name}</MenuItem>
@@ -546,7 +537,7 @@ const Transactions = () => {
         </Grid>
 
         {/* COLUMNA DERECHA: LISTADO */}
-        <Grid item xs={12} md={7} lg={7.5}>
+        <Grid size={{ xs: 12, md: 7, lg: 7.5 }}>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
             <Typography variant="h6" sx={{ color: '#FFFFFF', fontWeight: 700 }}>
               Movimientos Recientes
