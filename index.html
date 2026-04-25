@@ -39,10 +39,29 @@
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
     <script>
-      // Register service worker
+      // Register service worker and handle updates
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
-          navigator.serviceWorker.register('/sw.js').catch(console.error);
+          navigator.serviceWorker.register('/sw.js').then(registration => {
+            registration.addEventListener('updatefound', () => {
+              const newWorker = registration.installing;
+              newWorker.addEventListener('statechange', () => {
+                if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                  // New version available! Reloading...
+                  window.location.reload();
+                }
+              });
+            });
+          }).catch(console.error);
+        });
+
+        // Ensure refresh is only once
+        let refreshing = false;
+        navigator.serviceWorker.addEventListener('controllerchange', () => {
+          if (!refreshing) {
+            window.location.reload();
+            refreshing = true;
+          }
         });
       }
     </script>
