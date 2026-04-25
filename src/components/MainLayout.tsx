@@ -114,7 +114,8 @@ const MainLayout = () => {
           backdropFilter: 'blur(10px)',
           backgroundImage: 'none',
           boxShadow: 'none',
-          borderBottom: '1px solid rgba(255,255,255,0.05)'
+          borderBottom: '1px solid rgba(255,255,255,0.05)',
+          pt: 'env(safe-area-inset-top)'
         }}
       >
         <Toolbar>
@@ -145,7 +146,13 @@ const MainLayout = () => {
           ModalProps={{ keepMounted: true }}
           sx={{
             display: { xs: 'block', sm: 'none' },
-            '& .MuiDrawer-paper': { boxSizing: 'border-box', width: drawerWidth, bgcolor: 'background.paper', backgroundImage: 'none' },
+            '& .MuiDrawer-paper': { 
+              boxSizing: 'border-box', 
+              width: drawerWidth, 
+              bgcolor: 'background.paper', 
+              backgroundImage: 'none',
+              pt: 'env(safe-area-inset-top)'
+            },
           }}
         >
           {drawer}
@@ -169,7 +176,8 @@ const MainLayout = () => {
         width: { sm: `calc(100% - ${drawerWidth}px)` }, 
         overflowY: 'auto', 
         maxHeight: '100vh',
-        mt: { xs: 7, sm: 0 } // Espacio para la AppBar fija en mobile
+        mt: { xs: 'calc(56px + env(safe-area-inset-top))', sm: 0 },
+        pt: { xs: 2, sm: 0 }
       }}>
         <Outlet />
       </Box>
