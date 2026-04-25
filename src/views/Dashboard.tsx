@@ -335,7 +335,7 @@ const Dashboard = () => {
 
         {/* CHART: GASTOS POR CATEGORÍA */}
         <Grid size={{ xs: 12, md: 6 }}>
-          <Card sx={{ height: { xs: 580, md: 450 }, borderRadius: '16px' }}>
+          <Card sx={{ height: { xs: 780, md: 450 }, borderRadius: '16px' }}>
             <CardContent sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
               <Typography variant="h6" sx={{ fontWeight: 700, mb: 3 }}>
                 Gastos por Categoría
@@ -345,19 +345,19 @@ const Dashboard = () => {
                 width: '100%', 
                 minHeight: 0,
                 display: 'flex', 
-                flexDirection: 'row', 
+                flexDirection: { xs: 'column', md: 'row' }, 
                 justifyContent: 'space-between', 
-                alignItems: 'center', 
-                gap: 2,
+                alignItems: { xs: 'stretch', md: 'center' }, 
+                gap: 4,
                 overflow: 'hidden'
               }}>
                 {stats?.expensesByCategory?.length > 0 ? (
                   <>
                     {/* Gráfico (Ancho Flexible) */}
                     <Box sx={{ 
-                      flex: 1, 
-                      minWidth: { xs: 150, md: 240 },
-                      height: { xs: 250, md: 320 },
+                      flex: { xs: '0 0 280px', md: 1 }, 
+                      minWidth: { xs: '100%', md: 240 },
+                      height: { xs: 280, md: 320 },
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center'
@@ -387,11 +387,11 @@ const Dashboard = () => {
 
                     {/* Lista (Ancho Fijo) */}
                     <Box sx={{ 
-                      width: { xs: '180px', sm: '280px', md: '320px' }, 
+                      width: { xs: '100%', md: '320px' }, 
                       flexShrink: 0,
-                      maxHeight: { xs: 280, md: 320 }, 
+                      maxHeight: { xs: 400, md: 320 }, 
                       overflowY: 'auto', 
-                      pr: 1,
+                      pr: { xs: 0, md: 1 },
                       display: 'flex',
                       flexDirection: 'column',
                       gap: 1.5,
