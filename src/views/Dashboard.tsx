@@ -289,7 +289,7 @@ const Dashboard = () => {
 
       <Grid container spacing={3}>
         {/* CHART: ACTIVIDAD DE GASTOS */}
-        <Grid item xs={12} md={6}>
+        <Grid size={{ xs: 12, md: 6 }}>
           <Card sx={{ height: { xs: 580, md: 450 }, borderRadius: '16px' }}>
             <CardContent sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
               <Typography variant="h6" sx={{ fontWeight: 700, mb: 3 }}>
@@ -334,7 +334,7 @@ const Dashboard = () => {
         </Grid>
 
         {/* CHART: GASTOS POR CATEGORÍA */}
-        <Grid item xs={12} md={6}>
+        <Grid size={{ xs: 12, md: 6 }}>
           <Card sx={{ height: { xs: 580, md: 450 }, borderRadius: '16px' }}>
             <CardContent sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
               <Typography variant="h6" sx={{ fontWeight: 700, mb: 3 }}>
@@ -455,7 +455,7 @@ const Dashboard = () => {
         </Grid>
 
         {/* CHART: SALDOS POR CUENTA */}
-        <Grid item xs={12}>
+        <Grid size={{ xs: 12 }}>
           <Card sx={{ height: '100%', borderRadius: '16px' }}>
             <CardContent>
               <Typography variant="h6" sx={{ fontWeight: 700, mb: 3 }}>
@@ -500,7 +500,7 @@ const Dashboard = () => {
                     }}>
                       <Grid container spacing={2}>
                         {stats.accountBalances.filter((a: any) => a.balance > 0).sort((a: any, b: any) => b.balance - a.balance).map((acc: any) => (
-                          <Grid item xs={12} sm={6} lg={12} key={acc.name}>
+                          <Grid size={{ xs: 12, sm: 6, lg: 12 }} key={acc.name}>
                             <Box sx={{ 
                               p: 2, 
                               borderRadius: '12px', 

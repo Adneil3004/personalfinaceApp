@@ -289,9 +289,6 @@ export const api = {
     // --- Stats for Charts ---
     
     // 1. Expenses by Category (EXCLUIR transferencias entre cuentas)
-    const allExpenseCategories = flattenedTransactions
-      .filter(t => t.type === 'expense' && t.date >= startOfMonth)
-      .map(t => t.category_name);
     
     
     const categoryMap = flattenedTransactions
