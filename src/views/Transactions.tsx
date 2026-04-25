@@ -13,10 +13,14 @@ import {
   Avatar,
   CircularProgress,
   Alert,
-  IconButton
+  IconButton,
+  Accordion,
+  AccordionSummary,
+  AccordionDetails
 } from '@mui/material';
 import {
   KeyboardArrowDown,
+  KeyboardArrowUp,
   Help,
   Home,
   ShoppingCart,
@@ -53,7 +57,9 @@ import {
 } from '@mui/icons-material';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuthStore } from '../store/useAuthStore';
-import { api, type Category, type Account, type Transaction } from '../services/api';
+import { api, type Category, type Account, type Transaction, type RecurringTransaction } from '../services/api';
+import RecurringExpenseForm from '../components/RecurringExpenseForm';
+import RecurringExpenseList from '../components/RecurringExpenseList';
 
 const IconMapper: Record<string, React.ReactNode> = {
   'home': <Home fontSize="small" />,
@@ -112,12 +118,13 @@ const Transactions = () => {
   const [description, setDescription] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [recurringExpanded, setRecurringExpanded] = useState(false);
+  const [editingRecurring, setEditingRecurring] = useState<RecurringTransaction | null>(null);
+  const [recurringRefreshKey, setRecurringRefreshKey] = useState(0);
 
   const fetchData = async () => {
     try {
       setLoading(true);
-      console.log('--- Debug: Fetching Data ---');
-      console.log('User ID from store:', user?.id);
 
       const [accs, cats, trans] = await Promise.all([
         api.getAccounts(),
@@ -125,14 +132,22 @@ const Transactions = () => {
         api.getTransactions()
       ]);
 
-      console.log('Categories received:', cats.length, cats);
-      console.log('Accounts received:', accs.length, accs);
 
       setAccounts(accs);
       setCategories(cats);
       setTransactions(trans);
 
-      if (cats.length > 0) {
+      // Lógica de auto-selección de categoría
+      if (type === 'transfer') {
+        const transferCat = cats.find(c => c.name.toLowerCase() === 'transferencia');
+        if (transferCat) {
+          setCategoryId(transferCat.id);
+        } else if (cats.length > 0) {
+          // Si no existe, al menos ponemos la primera para que no sea null, 
+          // aunque el backend creará la correcta por su cuenta.
+          setCategoryId(cats[0].id);
+        }
+      } else if (cats.length > 0) {
         setCategoryId(cats[0].id);
       } else {
         setCategoryId('');
@@ -438,30 +453,30 @@ const Transactions = () => {
                   </Box>
 
                   <Box sx={{ display: 'flex', gap: 2 }}>
-                    {type !== 'transfer' && (
-                      <Box sx={{ flex: 1 }}>
-                        <Typography sx={{ color: 'text.secondary', fontWeight: 700, fontSize: '0.7rem', mb: 1 }}>CATEGORÍA</Typography>
-                        <TextField
-                          select
-                          fullWidth
-                          value={categoryId}
-                          onChange={(e) => setCategoryId(e.target.value)}
-                          required
-                          sx={{
-                            '& .MuiOutlinedInput-root': {
-                              bgcolor: 'rgba(255,255,255,0.03)',
-                              borderRadius: '10px',
-                              '& fieldset': { borderColor: 'rgba(255,255,255,0.1)' },
-                            }
-                          }}
-                          slotProps={{ select: { IconComponent: KeyboardArrowDown } }}
-                        >
-                          {categories.map((cat) => (
-                            <MenuItem key={cat.id} value={cat.id} sx={{ pl: cat.parent_id ? 4 : 2 }}>{cat.name}</MenuItem>
-                          ))}
-                        </TextField>
-                      </Box>
-                    )}
+                    <Box sx={{ flex: 1 }}>
+                      <Typography sx={{ color: 'text.secondary', fontWeight: 700, fontSize: '0.7rem', mb: 1 }}>CATEGORÍA</Typography>
+                      <TextField
+                        select
+                        fullWidth
+                        value={categoryId}
+                        onChange={(e) => setCategoryId(e.target.value)}
+                        required
+                        disabled={type === 'transfer'}
+                        sx={{
+                          '& .MuiOutlinedInput-root': {
+                            bgcolor: 'rgba(255,255,255,0.03)',
+                            borderRadius: '10px',
+                            '& fieldset': { borderColor: 'rgba(255,255,255,0.1)' },
+                            opacity: type === 'transfer' ? 0.7 : 1
+                          }
+                        }}
+                        slotProps={{ select: { IconComponent: KeyboardArrowDown } }}
+                      >
+                        {categories.map((cat) => (
+                          <MenuItem key={cat.id} value={cat.id} sx={{ pl: cat.parent_id ? 4 : 2 }}>{cat.name}</MenuItem>
+                        ))}
+                      </TextField>
+                    </Box>
                     <Box sx={{ flex: 1 }}>
                       <Typography sx={{ color: 'text.secondary', fontWeight: 700, fontSize: '0.7rem', mb: 1 }}>FECHA</Typography>
                       <TextField
@@ -574,13 +589,19 @@ const Transactions = () => {
                 >
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                     <Avatar sx={{ 
-                      bgcolor: t.type === 'expense' ? 'rgba(217, 45, 32, 0.1)' : 'rgba(3, 152, 85, 0.1)',
-                      color: t.type === 'expense' ? '#F04438' : '#12B76A',
+                      bgcolor: t.categories?.name.toLowerCase() === 'transferencia' 
+                        ? 'rgba(99, 102, 241, 0.1)' 
+                        : (t.type === 'expense' ? 'rgba(217, 45, 32, 0.1)' : 'rgba(3, 152, 85, 0.1)'),
+                      color: t.categories?.name.toLowerCase() === 'transferencia' 
+                        ? '#6366F1' 
+                        : (t.type === 'expense' ? '#F04438' : '#12B76A'),
                       width: 44,
                       height: 44,
                       borderRadius: '12px'
                     }}>
-                      {IconMapper[t.categories?.icon || 'default']}
+                      {t.categories?.name.toLowerCase() === 'transferencia' 
+                        ? <TransferIcon fontSize="small" /> 
+                        : IconMapper[t.categories?.icon || 'default']}
                     </Avatar>
                     <Box>
                       <Typography sx={{ color: '#FFFFFF', fontWeight: 600, fontSize: '0.95rem' }}>
@@ -596,10 +617,13 @@ const Transactions = () => {
                     <Box sx={{ textAlign: 'right' }}>
                       <Typography sx={{ 
                         fontWeight: 700, 
-                        color: t.type === 'expense' ? '#F04438' : '#12B76A',
+                        color: t.categories?.name.toLowerCase() === 'transferencia' 
+                          ? '#6366F1' 
+                          : (t.type === 'expense' ? '#F04438' : '#12B76A'),
                         fontSize: '1rem'
                       }}>
-                        {t.type === 'expense' ? '-' : '+'}{new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(Number(t.amount))}
+                        {t.categories?.name.toLowerCase() === 'transferencia' ? '⇄ ' : (t.type === 'expense' ? '-' : '+')}
+                        {new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(Number(t.amount))}
                       </Typography>
                       <Typography sx={{ color: 'text.secondary', fontSize: '0.7rem', fontWeight: 500 }}>
                         {accounts.find(a => a.id === t.account_id)?.name || 'Cuenta'}
@@ -624,6 +648,57 @@ const Transactions = () => {
               ))}
             </AnimatePresence>
           </List>
+        </Grid>
+        
+        {/* SECCIÓN DE GASTOS RECURRENTES */}
+        <Grid size={{ xs: 12 }}>
+          <Accordion 
+            expanded={recurringExpanded}
+            onChange={() => setRecurringExpanded(!recurringExpanded)}
+            sx={{
+              bgcolor: 'background.paper',
+              borderRadius: '16px !important',
+              border: '1px solid rgba(255, 255, 255, 0.05)',
+              '&:before': { display: 'none' },
+              mb: 4
+            }}
+          >
+            <AccordionSummary
+              expandIcon={recurringExpanded ? <KeyboardArrowUp /> : <KeyboardArrowDown />}
+              sx={{
+                bgcolor: 'rgba(255,255,255,0.02)',
+                borderRadius: '16px',
+                '& .MuiAccordionSummary-content': { my: 2 }
+              }}
+            >
+              <Typography variant="h6" sx={{ color: '#FFFFFF', fontWeight: 700 }}>
+                Gastos Recurrentes
+              </Typography>
+            </AccordionSummary>
+            <AccordionDetails sx={{ p: 3 }}>
+              <Grid container spacing={3}>
+                {/* Formulario de nuevo/modificar recurrente */}
+                <Grid size={{ xs: 12, md: 5 }}>
+                  <RecurringExpenseForm 
+                    editData={editingRecurring || undefined}
+                    onCancelEdit={() => setEditingRecurring(null)}
+                    onSuccess={() => {
+                      setEditingRecurring(null);
+                      setRecurringRefreshKey(k => k + 1);
+                    }}
+                  />
+                </Grid>
+                
+                {/* Lista de recurrentes */}
+                <Grid size={{ xs: 12, md: 7 }}>
+                  <RecurringExpenseList 
+                    key={recurringRefreshKey}
+                    onEdit={(item) => setEditingRecurring(item)}
+                  />
+                </Grid>
+              </Grid>
+            </AccordionDetails>
+          </Accordion>
         </Grid>
       </Grid>
     </Box>

@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { supabase } from './services/supabase';
 import { useAuthStore } from './store/useAuthStore';
+import { api } from './services/api';
 import Login from './views/Login';
 import Register from './views/Register';
 import Dashboard from './views/Dashboard';
@@ -30,7 +31,6 @@ function App() {
   const setLoading = useAuthStore((state) => state.setLoading);
 
   useEffect(() => {
-    console.log('App: Iniciando verificación de sesión...');
     
     // Timeout de seguridad por si Supabase no responde
     const timeout = setTimeout(() => {
@@ -40,10 +40,22 @@ function App() {
 
     // Verificar sesión inicial
     supabase.auth.getSession().then(({ data: { session } }) => {
-      console.log('App: Sesión obtenida:', session ? 'Usuario autenticado' : 'Sin sesión');
       setAuth(session);
       setLoading(false);
       clearTimeout(timeout);
+      
+      // Ejecutar transacciones recurrentes si hay sesión
+      if (session) {
+        api.executeRecurringTransactions()
+          .then(result => {
+            if (result.executed > 0) {
+              console.log(`App: Se ejecutaron ${result.executed} transacciones recurrentes`);
+            }
+          })
+          .catch(err => {
+            console.error('App: Error al ejecutar recurrentes:', err);
+          });
+      }
     }).catch(err => {
       console.error('App: Error al obtener sesión:', err);
       setLoading(false);
@@ -52,7 +64,6 @@ function App() {
 
     // Escuchar cambios de auth
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      console.log('App: Cambio de estado de auth:', _event, session ? 'Usuario presente' : 'Usuario ausente');
       setAuth(session);
     });
 

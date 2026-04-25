@@ -6,7 +6,6 @@ import { theme } from './theme';
 import App from './App';
 import './index.css';
 
-console.log('main.tsx: Iniciando renderizado...');
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>

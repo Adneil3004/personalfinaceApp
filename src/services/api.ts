@@ -25,9 +25,28 @@ export interface Transaction {
   account_id: string;
   category_id: string;
   amount: number;
-  type: 'income' | 'expense';
+  type: 'income' | 'expense' | 'transfer';
   date: string;
   description?: string;
+  
+  // Relations when fetched
+  categories?: { name: string; icon: string; color: string };
+  accounts?: { name: string };
+}
+
+export interface RecurringTransaction {
+  id: string;
+  user_id: string;
+  account_id: string;
+  category_id: string;
+  amount: number;
+  type: 'income' | 'expense';
+  frequency: 'monthly' | 'weekly' | 'yearly';
+  next_execution_date: string;
+  description?: string;
+  is_active?: boolean;
+  created_at?: string;
+  updated_at?: string;
   
   // Relations when fetched
   categories?: { name: string; icon: string; color: string };
@@ -57,13 +76,19 @@ export const api = {
     // Calculate current_balance = initial_balance +/- transactions
     const { data: transactions, error: tErr } = await supabase
       .from('transactions')
-      .select('account_id, amount, type');
+      .select('account_id, amount, type, description');
     if (tErr) throw tErr;
 
     return (accounts as Account[]).map(acc => {
       const transSum = (transactions || [])
         .filter(t => t.account_id === acc.id)
-        .reduce((sum, t) => sum + (t.type === 'income' ? Number(t.amount) : -Number(t.amount)), 0);
+        .reduce((sum, t) => {
+          if (t.type === 'transfer') {
+            const isOut = t.description?.toLowerCase().includes('enviada');
+            return sum + (isOut ? -Number(t.amount) : Number(t.amount));
+          }
+          return sum + (t.type === 'income' ? Number(t.amount) : -Number(t.amount));
+        }, 0);
       return { ...acc, current_balance: Number(acc.initial_balance) + transSum };
     });
   },
@@ -122,7 +147,7 @@ export const api = {
 
     const { data: transactions, error: tErr } = await supabase
       .from('transactions')
-      .select('account_id, amount, type, date');
+      .select('account_id, amount, type, date, description');
     if (tErr) throw tErr;
 
     const txns = transactions || [];
@@ -134,7 +159,13 @@ export const api = {
     accs.forEach(acc => {
       const delta = txns
         .filter(t => t.account_id === acc.id)
-        .reduce((s, t) => s + (t.type === 'income' ? Number(t.amount) : -Number(t.amount)), 0);
+        .reduce((s, t) => {
+          if (t.type === 'transfer') {
+            const isOut = t.description?.toLowerCase().includes('enviada');
+            return s + (isOut ? -Number(t.amount) : Number(t.amount));
+          }
+          return s + (t.type === 'income' ? Number(t.amount) : -Number(t.amount));
+        }, 0);
       
       const balance = Number(acc.initial_balance) + delta;
 
@@ -222,13 +253,19 @@ export const api = {
     // Calculate balances per account
     const accountColors = ['#00A3E0', '#316ee9', '#002D72', '#81cfff', '#039855', '#D92D20', '#FDB022'];
     const accountBalances = accounts?.map((acc, index) => {
-      const transSum = flattenedTransactions
+      const balanceSum = flattenedTransactions
         .filter(t => t.account_id === acc.id)
-        .reduce((sum, t) => sum + (t.type === 'income' ? Number(t.amount) : -Number(t.amount)), 0);
+        .reduce((sum, t) => {
+          if (t.type === 'transfer') {
+            const isOut = t.description?.toLowerCase().includes('enviada');
+            return sum + (isOut ? -Number(t.amount) : Number(t.amount));
+          }
+          return sum + (t.type === 'income' ? Number(t.amount) : -Number(t.amount));
+        }, 0);
       
       return {
         name: acc.name,
-        balance: Number(acc.initial_balance) + transSum,
+        balance: Number(acc.initial_balance) + balanceSum,
         color: accountColors[index % accountColors.length]
       };
     }) || [];
@@ -246,14 +283,19 @@ export const api = {
     const monthlyIncome = flattenedTransactions?.filter(t => t.type === 'income' && t.date >= startOfMonth)
                                      .reduce((acc, curr) => acc + Number(curr.amount), 0) || 0;
 
-    const monthlyExpenses = flattenedTransactions?.filter(t => t.type === 'expense' && t.date >= startOfMonth)
+    const monthlyExpenses = flattenedTransactions?.filter(t => t.type === 'expense' && t.date >= startOfMonth && t.category_name?.toLowerCase() !== 'transferencia')
                                        .reduce((acc, curr) => acc + Number(curr.amount), 0) || 0;
 
     // --- Stats for Charts ---
     
-    // 1. Expenses by Category
-    const categoryMap = flattenedTransactions
+    // 1. Expenses by Category (EXCLUIR transferencias entre cuentas)
+    const allExpenseCategories = flattenedTransactions
       .filter(t => t.type === 'expense' && t.date >= startOfMonth)
+      .map(t => t.category_name);
+    
+    
+    const categoryMap = flattenedTransactions
+      .filter(t => t.type === 'expense' && t.date >= startOfMonth && t.category_name?.toLowerCase() !== 'transferencia')
       .reduce((acc: any, curr: any) => {
         const name = curr.category_name;
         acc[name] = (acc[name] || 0) + Number(curr.amount);
@@ -276,7 +318,7 @@ export const api = {
 
     const dailySpending = last7Days.map(dayStr => {
       const amount = flattenedTransactions
-        .filter(t => t.type === 'expense' && t.date === dayStr)
+        .filter(t => t.type === 'expense' && t.date === dayStr && t.category_name?.toLowerCase() !== 'transferencia')
         .reduce((acc, curr) => acc + Number(curr.amount), 0);
       
       const label = new Date(dayStr + 'T00:00:00').toLocaleDateString('es-MX', { weekday: 'short' });
@@ -352,18 +394,18 @@ export const api = {
           account_id: from_account_id,
           category_id: transferCatId,
           amount,
-          type: 'expense',
+          type: 'transfer',
           date,
-          description: description ? `[Transferencia] ${description}` : 'Transferencia enviada'
+          description: description ? `[Transferencia] ${description} (Enviada)` : 'Transferencia enviada'
         },
         {
           user_id,
           account_id: to_account_id,
           category_id: transferCatId,
           amount,
-          type: 'income',
+          type: 'transfer',
           date,
-          description: description ? `[Transferencia] ${description}` : 'Transferencia recibida'
+          description: description ? `[Transferencia] ${description} (Recibida)` : 'Transferencia recibida'
         }
       ]);
 
@@ -384,5 +426,137 @@ export const api = {
       .delete()
       .eq('id', id);
     if (error) throw error;
+  },
+
+  // --- Recurring Transactions ---
+  
+  // Helper: add months handling edge case (31st of month)
+  addMonths(date: Date, months: number): Date {
+    const year = date.getFullYear();
+    const month = date.getMonth() + months;
+    const day = date.getDate();
+    
+    const targetMonth = month % 12;
+    const yearIncrement = Math.floor(month / 12);
+    
+    // Get the last day of the target month
+    const getLastDayOfMonth = (y: number, m: number) => {
+      return new Date(y, m + 1, 0).getDate();
+    };
+    
+    const targetYear = year + yearIncrement;
+    const targetLastDay = getLastDayOfMonth(targetYear, targetMonth);
+    
+    // If original day exceeds target month's days, use last day
+    const finalDay = Math.min(day, targetLastDay);
+    
+    return new Date(targetYear, targetMonth, finalDay);
+  },
+
+  addDays(date: Date, days: number): Date {
+    const result = new Date(date);
+    result.setDate(result.getDate() + days);
+    return result;
+  },
+
+  async getRecurringTransactions(): Promise<RecurringTransaction[]> {
+    const { data, error } = await supabase
+      .from('recurring_transactions')
+      .select(`
+        *,
+        categories (name, icon, color),
+        accounts (name)
+      `)
+      .order('next_execution_date', { ascending: true });
+    
+    if (error) throw error;
+    return data as RecurringTransaction[];
+  },
+
+  async createRecurringTransaction(data: Omit<RecurringTransaction, 'id' | 'created_at' | 'updated_at'>): Promise<RecurringTransaction> {
+    const { data: created, error } = await supabase
+      .from('recurring_transactions')
+      .insert([data])
+      .select()
+      .single();
+    
+    if (error) throw error;
+    return created as RecurringTransaction;
+  },
+
+  async updateRecurringTransaction(id: string, data: Partial<RecurringTransaction>): Promise<void> {
+    const { error } = await supabase
+      .from('recurring_transactions')
+      .update(data)
+      .eq('id', id);
+    if (error) throw error;
+  },
+
+  async deleteRecurringTransaction(id: string): Promise<void> {
+    // Soft delete - set is_active to false
+    const { error } = await supabase
+      .from('recurring_transactions')
+      .update({ is_active: false })
+      .eq('id', id);
+    if (error) throw error;
+  },
+
+  async executeRecurringTransactions(): Promise<{ executed: number; errors: string[] }> {
+    const { data: recurrences, error: fetchError } = await supabase
+      .from('recurring_transactions')
+      .select('*')
+      .eq('is_active', true)
+      .lte('next_execution_date', new Date().toISOString().split('T')[0]);
+    
+    if (fetchError) throw fetchError;
+    
+    let executedCount = 0;
+    const errors: string[] = [];
+    
+    for (const recurrence of (recurrences || [])) {
+      try {
+        // Create the transaction
+        await supabase.from('transactions').insert({
+          user_id: recurrence.user_id,
+          account_id: recurrence.account_id,
+          category_id: recurrence.category_id,
+          amount: recurrence.amount,
+          type: recurrence.type,
+          date: new Date().toISOString().split('T')[0],
+          description: recurrence.description || `Recurrente automático`
+        });
+        
+        // Calculate next execution date
+        let nextDate: Date;
+        const currentDate = new Date(recurrence.next_execution_date);
+        
+        switch (recurrence.frequency) {
+          case 'monthly':
+            nextDate = this.addMonths(currentDate, 1);
+            break;
+          case 'weekly':
+            nextDate = this.addDays(currentDate, 7);
+            break;
+          case 'yearly':
+            nextDate = this.addMonths(currentDate, 12);
+            break;
+          default:
+            nextDate = this.addMonths(currentDate, 1);
+        }
+        
+        // Update next_execution_date
+        await supabase
+          .from('recurring_transactions')
+          .update({ next_execution_date: nextDate.toISOString().split('T')[0] })
+          .eq('id', recurrence.id);
+        
+        executedCount++;
+      } catch (err: any) {
+        errors.push(`Error executing ${recurrence.id}: ${err.message}`);
+        console.error('Error executing recurring transaction:', err);
+      }
+    }
+    
+    return { executed: executedCount, errors };
   }
 };

@@ -61,25 +61,34 @@ const MainLayout = () => {
         {navItems.map((item) => {
           const isActive = location.pathname === item.path || (item.path !== '/' && location.pathname.startsWith(item.path));
           return (
-            <ListItem disablePadding key={item.text} sx={{ mb: 1 }}>
-              <ListItemButton 
-                onClick={() => {
-                  navigate(item.path);
-                  setMobileOpen(false);
-                }}
-                sx={{ 
-                  borderRadius: 2, 
-                  bgcolor: isActive ? `${theme.palette.primary.main}15` : 'transparent',
-                  color: isActive ? theme.palette.primary.main : 'text.primary',
-                  '&:hover': { bgcolor: `${theme.palette.primary.main}10` }
-                }}
-              >
-                <ListItemIcon sx={{ color: isActive ? theme.palette.primary.main : 'inherit' }}>
-                  {item.icon}
-                </ListItemIcon>
-                <ListItemText primary={item.text} sx={{ '& .MuiListItemText-primary': { fontWeight: isActive ? 600 : 400 } }} />
-              </ListItemButton>
-            </ListItem>
+            <Box 
+              key={item.text}
+              onClick={() => {
+                navigate(item.path);
+                setMobileOpen(false);
+              }}
+              sx={{ 
+                mb: 1,
+                px: 2,
+                py: 1.5,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 2,
+                borderRadius: 2,
+                cursor: 'pointer',
+                bgcolor: isActive ? `${theme.palette.primary.main}15` : 'transparent',
+                color: isActive ? theme.palette.primary.main : 'text.primary',
+                transition: 'all 0.2s ease',
+                '&:hover': { bgcolor: `${theme.palette.primary.main}10` }
+              }}
+            >
+              <Box sx={{ display: 'flex', color: isActive ? theme.palette.primary.main : 'inherit' }}>
+                {item.icon}
+              </Box>
+              <Typography sx={{ fontWeight: isActive ? 600 : 400 }}>
+                {item.text}
+              </Typography>
+            </Box>
           );
         })}
       </List>

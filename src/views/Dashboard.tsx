@@ -75,7 +75,7 @@ const EmptyStateChart = ({ message = "No hay datos para mostrar" }) => (
   </Box>
 );
 
-const SummaryCard = ({ title, value, icon, trend, color, highlighted = false }: any) => {
+const SummaryCard = ({ title, value, icon, trend, color, highlighted = false, statusText }: any) => {
   return (
     <motion.div whileHover={{ y: -5 }} transition={{ duration: 0.2 }} style={{ height: '100%', width: '100%' }}>
       <Card sx={{
@@ -156,6 +156,19 @@ const SummaryCard = ({ title, value, icon, trend, color, highlighted = false }: 
             }}>
               {formatCurrency(value)}
             </Typography>
+            {statusText && (
+              <Typography variant="caption" sx={{ 
+                color: highlighted ? 'rgba(255,255,255,0.8)' : color, 
+                fontWeight: 700, 
+                textTransform: 'uppercase',
+                fontSize: '0.65rem',
+                letterSpacing: '0.05em',
+                mt: 0.5,
+                display: 'block'
+              }}>
+                {statusText}
+              </Typography>
+            )}
           </Box>
         </CardContent>
       </Card>
@@ -214,63 +227,69 @@ const Dashboard = () => {
       </Box>
 
       {/* SUMMARY CARDS */}
-      <Box sx={{ overflow: 'hidden', mb: { xs: 4, md: 6 } }}>
-        <Grid container spacing={{ xs: 2, md: 4 }}>
-          <Grid size={{ xs: 6, sm: 6, md: 4 }}>
-            <SummaryCard
-              title="Patrimonio Neto"
-              value={stats?.totalBalance || 0}
-              icon={<AccountBalanceWallet />}
-              color="#316ee9"
-              highlighted
-            />
-          </Grid>
-          <Grid size={{ xs: 6, sm: 6, md: 4 }}>
-            <SummaryCard
-              title="Gastos del Mes"
-              value={stats?.monthlyExpenses || 0}
-              icon={<ShoppingBag />}
-              color="#FDB022"
-            />
-          </Grid>
-          <Grid size={{ xs: 6, sm: 6, md: 4 }}>
-            <SummaryCard
-              title="Ahorro Mensual"
-              value={stats?.monthlySavings || 0}
-              icon={<TrendingUp />}
-              color="#039855"
-            />
-          </Grid>
-          <Grid size={{ xs: 6, sm: 6, md: 4 }}>
-            <SummaryCard
-              title="Capital (Débito)"
-              value={stats?.totalAssets || 0}
-              icon={<AccountBalance />}
-              color="#00A3E0"
-            />
-          </Grid>
-          <Grid size={{ xs: 6, sm: 6, md: 4 }}>
-            <SummaryCard
-              title="Deuda (Crédito)"
-              value={Math.abs(stats?.totalDebt || 0)}
-              icon={<TrendingDown />}
-              color="#D92D20"
-            />
-          </Grid>
-          <Grid size={{ xs: 6, sm: 6, md: 4 }}>
-            <SummaryCard
-              title="Límite Crédito"
-              value={stats?.creditLimit || 0}
-              icon={<CreditCard />}
-              color="#81cfff"
-            />
-          </Grid>
-        </Grid>
+      <Box sx={{ 
+        display: 'flex', 
+        flexWrap: 'wrap', 
+        gap: { xs: 2, md: 4 },
+        mb: { xs: 4, md: 6 } 
+      }}>
+        {[
+          {
+            title: "Patrimonio Neto",
+            value: stats?.totalBalance || 0,
+            icon: <AccountBalanceWallet />,
+            color: "#316ee9",
+            highlighted: true
+          },
+          {
+            title: "Gastos del Mes",
+            value: stats?.monthlyExpenses || 0,
+            icon: <ShoppingBag />,
+            color: "#FDB022"
+          },
+          {
+            title: (stats?.monthlySavings || 0) >= 0 ? "Superávit Mensual" : "Déficit Mensual",
+            value: stats?.monthlySavings || 0,
+            icon: (stats?.monthlySavings || 0) >= 0 ? <TrendingUp /> : <TrendingDown />,
+            color: (stats?.monthlySavings || 0) >= 0 ? "#039855" : "#D92D20",
+            highlighted: (stats?.monthlySavings || 0) < 0,
+            statusText: (stats?.monthlySavings || 0) >= 0 ? "Saludable" : "Requiere Atención"
+          },
+          {
+            title: "Capital (Débito)",
+            value: stats?.totalAssets || 0,
+            icon: <AccountBalance />,
+            color: "#00A3E0"
+          },
+          {
+            title: "Deuda (Crédito)",
+            value: Math.abs(stats?.totalDebt || 0),
+            icon: <TrendingDown />,
+            color: "#D92D20"
+          },
+          {
+            title: "Límite Crédito",
+            value: stats?.creditLimit || 0,
+            icon: <CreditCard />,
+            color: "#81cfff"
+          }
+        ].map((card, index) => (
+          <Box key={index} sx={{ 
+            width: { 
+              xs: 'calc(50% - 8px)', 
+              sm: 'calc(50% - 8px)', 
+              md: 'calc(33.33% - 21.33px)' 
+            },
+            minHeight: { xs: 150, md: 180 }
+          }}>
+            <SummaryCard {...card} />
+          </Box>
+        ))}
       </Box>
 
       <Grid container spacing={3}>
         {/* CHART: ACTIVIDAD DE GASTOS */}
-        <Grid size={{ xs: 12, md: 6 }}>
+        <Grid item xs={12} md={6}>
           <Card sx={{ height: { xs: 580, md: 450 }, borderRadius: '16px' }}>
             <CardContent sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
               <Typography variant="h6" sx={{ fontWeight: 700, mb: 3 }}>
@@ -315,7 +334,7 @@ const Dashboard = () => {
         </Grid>
 
         {/* CHART: GASTOS POR CATEGORÍA */}
-        <Grid size={{ xs: 12, md: 6 }}>
+        <Grid item xs={12} md={6}>
           <Card sx={{ height: { xs: 580, md: 450 }, borderRadius: '16px' }}>
             <CardContent sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
               <Typography variant="h6" sx={{ fontWeight: 700, mb: 3 }}>
@@ -326,29 +345,37 @@ const Dashboard = () => {
                 width: '100%', 
                 minHeight: 0,
                 display: 'flex', 
-                flexDirection: { xs: 'column', md: 'row' }, 
-                justifyContent: 'center', 
+                flexDirection: 'row', 
+                justifyContent: 'space-between', 
                 alignItems: 'center', 
-                gap: { xs: 4, md: 2 } 
+                gap: 2,
+                overflow: 'hidden'
               }}>
                 {stats?.expensesByCategory?.length > 0 ? (
                   <>
-                    <Box sx={{ flex: { xs: '0 0 200px', md: '0 0 240px' }, height: { xs: 200, md: 300 }, width: '100%' }}>
-                      <ResponsiveContainer>
+                    {/* Gráfico (Ancho Flexible) */}
+                    <Box sx={{ 
+                      flex: 1, 
+                      minWidth: { xs: 150, md: 240 },
+                      height: { xs: 250, md: 320 },
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }}>
+                      <ResponsiveContainer width="100%" height="100%">
                         <PieChart>
-                            <Pie
-                              data={stats.expensesByCategory}
-                              innerRadius={60}
-                              outerRadius={100}
-                              paddingAngle={0}
-                              dataKey="value"
-                              stroke="none"
-                              strokeWidth={0}
-                            >
-                              {stats.expensesByCategory.map((entry: any, index: number) => (
-                                <Cell key={`cell-${index}`} fill={entry.color} stroke="none" strokeWidth={0} />
-                              ))}
-                            </Pie>
+                          <Pie
+                            data={stats.expensesByCategory}
+                            innerRadius="60%"
+                            outerRadius="90%"
+                            paddingAngle={0}
+                            dataKey="value"
+                            stroke="none"
+                          >
+                            {stats.expensesByCategory.map((entry: any, index: number) => (
+                              <Cell key={`cell-${index}`} fill={entry.color} />
+                            ))}
+                          </Pie>
                           <Tooltip 
                             formatter={formatTooltipValue}
                             contentStyle={{ backgroundColor: '#111927', border: 'none', borderRadius: '12px', boxShadow: '0 8px 32px rgba(0,0,0,0.4)', color: '#fff' }}
@@ -357,40 +384,66 @@ const Dashboard = () => {
                         </PieChart>
                       </ResponsiveContainer>
                     </Box>
+
+                    {/* Lista (Ancho Fijo) */}
                     <Box sx={{ 
-                      flex: 1, 
-                      width: '100%',
-                      maxHeight: { xs: 250, md: 320 }, 
+                      width: { xs: '180px', sm: '280px', md: '320px' }, 
+                      flexShrink: 0,
+                      maxHeight: { xs: 280, md: 320 }, 
                       overflowY: 'auto', 
                       pr: 1,
-                      '&::-webkit-scrollbar': { width: '6px' },
-                      '&::-webkit-scrollbar-track': { bgcolor: 'transparent' },
-                      '&::-webkit-scrollbar-thumb': { bgcolor: 'rgba(255,255,255,0.05)', borderRadius: '10px' }
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: 1.5,
+                      '&::-webkit-scrollbar': { width: '4px' },
+                      '&::-webkit-scrollbar-track': { bgcolor: 'rgba(255,255,255,0.02)' },
+                      '&::-webkit-scrollbar-thumb': { 
+                        bgcolor: 'rgba(255,255,255,0.1)', 
+                        borderRadius: '10px'
+                      }
                     }}>
-                      <Grid container spacing={2}>
-                        {stats.expensesByCategory.map((cat: any) => (
-                          <Grid size={{ xs: 12 }} key={cat.name}>
-                            <Box sx={{ 
-                              p: 2, 
-                              borderRadius: '12px', 
-                              bgcolor: 'rgba(255,255,255,0.02)', 
-                              border: '1px solid rgba(255,255,255,0.05)',
-                              transition: 'all 0.2s ease-in-out',
-                              '&:hover': { transform: 'translateX(6px)', bgcolor: 'rgba(255,255,255,0.05)', borderColor: 'rgba(255,255,255,0.1)' }
-                            }}>
-                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 0.5 }}>
-                                <Box sx={{ width: 10, height: 10, borderRadius: '50%', bgcolor: cat.color, boxShadow: `0 0 10px ${cat.color}40` }} />
-                                <Typography variant="caption" sx={{ fontWeight: 700, color: 'text.secondary', letterSpacing: '0.05em', textTransform: 'uppercase' }}>
-                                  {cat.name}
-                                </Typography>
-                              </Box>
-                              <Typography variant="h6" sx={{ fontSize: '1.3rem', fontWeight: 850, color: '#FFFFFF' }}>
-                                {new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(cat.value)}
+                      {stats.expensesByCategory.sort((a: any, b: any) => b.value - a.value).map((cat: any) => {
+                        const totalExpenses = stats.expensesByCategory.reduce((sum: number, c: any) => sum + c.value, 0);
+                        const percentage = totalExpenses > 0 ? (cat.value / totalExpenses) * 100 : 0;
+                        
+                        return (
+                          <Box key={cat.name} sx={{ width: '100%' }}>
+                            <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
+                              <Typography variant="caption" sx={{ 
+                                fontWeight: 700, 
+                                fontSize: { xs: '0.65rem', sm: '0.75rem' },
+                                whiteSpace: 'nowrap',
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                                maxWidth: '70%'
+                              }}>
+                                {cat.name}
+                              </Typography>
+                              <Typography variant="caption" sx={{ fontWeight: 800, fontSize: { xs: '0.65rem', sm: '0.75rem' } }}>
+                                {formatCurrency(cat.value)}
                               </Typography>
                             </Box>
-                          </Grid>
-                        ))}
-                      </Grid>
+                            
+                            <Box sx={{ 
+                              position: 'relative',
+                              width: '100%', 
+                              height: { xs: 20, sm: 26 }, 
+                              bgcolor: 'rgba(255,255,255,0.03)', 
+                              borderRadius: '4px',
+                              overflow: 'hidden',
+                              border: '1px solid rgba(255,255,255,0.05)'
+                            }}>
+                              <Box sx={{ 
+                                width: `${percentage}%`, 
+                                height: '100%', 
+                                bgcolor: cat.color,
+                                borderRadius: '2px',
+                                transition: 'width 1s ease-in-out'
+                              }} />
+                            </Box>
+                          </Box>
+                        );
+                      })}
                     </Box>
                   </>
                 ) : (
@@ -402,7 +455,7 @@ const Dashboard = () => {
         </Grid>
 
         {/* CHART: SALDOS POR CUENTA */}
-        <Grid size={{ xs: 12 }}>
+        <Grid item xs={12}>
           <Card sx={{ height: '100%', borderRadius: '16px' }}>
             <CardContent>
               <Typography variant="h6" sx={{ fontWeight: 700, mb: 3 }}>
@@ -447,7 +500,7 @@ const Dashboard = () => {
                     }}>
                       <Grid container spacing={2}>
                         {stats.accountBalances.filter((a: any) => a.balance > 0).sort((a: any, b: any) => b.balance - a.balance).map((acc: any) => (
-                          <Grid size={{ xs: 12, sm: 6, lg: 12 }} key={acc.name}>
+                          <Grid item xs={12} sm={6} lg={12} key={acc.name}>
                             <Box sx={{ 
                               p: 2, 
                               borderRadius: '12px', 
