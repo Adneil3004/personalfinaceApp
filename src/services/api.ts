@@ -1,4 +1,5 @@
 import { supabase } from './supabase';
+import { formatLocalDate } from '../utils/date';
 
 export interface Category {
   id: string;
@@ -138,7 +139,7 @@ export const api = {
 
   async getAccountsStats() {
     const now = new Date();
-    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+    const startOfMonth = formatLocalDate(new Date(now.getFullYear(), now.getMonth(), 1));
 
     const { data: accounts, error: accErr } = await supabase
       .from('accounts')
@@ -202,18 +203,31 @@ export const api = {
   },
 
   // --- Transactions ---
-  async getTransactions(): Promise<Transaction[]> {
-    const { data, error } = await supabase
+  async getTransactions(page: number = 0, pageSize: number = 10, accountId?: string): Promise<{ data: Transaction[], count: number }> {
+    const from = page * pageSize;
+    const to = from + pageSize - 1;
+
+    let query = supabase
       .from('transactions')
       .select(`
         *,
         categories (name, icon, color),
         accounts (name)
-      `)
-      .order('date', { ascending: false });
+      `, { count: 'exact' });
+
+    if (accountId && accountId !== 'all') {
+      query = query.eq('account_id', accountId);
+    }
+
+    const { data, error, count } = await query
+      .order('date', { ascending: false })
+      .range(from, to);
       
     if (error) throw error;
-    return data as Transaction[];
+    return { 
+      data: data as Transaction[], 
+      count: count || 0 
+    };
   },
 
   async createTransaction(transaction: Transaction): Promise<Transaction> {
@@ -230,7 +244,7 @@ export const api = {
   // --- Dashboard & Stats ---
   async getDashboardStats() {
     const now = new Date();
-    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+    const startOfMonth = formatLocalDate(new Date(now.getFullYear(), now.getMonth(), 1));
 
     // Get Total Balance (Sum of all accounts)
     const { data: accounts, error: accError } = await supabase.from('accounts').select('id, name, initial_balance, type, credit_limit');
@@ -310,10 +324,7 @@ export const api = {
     const last7Days = [...Array(7)].map((_, i) => {
       const d = new Date();
       d.setDate(d.getDate() - i);
-      const year = d.getFullYear();
-      const month = String(d.getMonth() + 1).padStart(2, '0');
-      const day = String(d.getDate()).padStart(2, '0');
-      return `${year}-${month}-${day}`;
+      return formatLocalDate(d);
     }).reverse();
 
     const dailySpending = last7Days.map(dayStr => {
@@ -506,7 +517,7 @@ export const api = {
       .from('recurring_transactions')
       .select('*')
       .eq('is_active', true)
-      .lte('next_execution_date', new Date().toISOString().split('T')[0]);
+      .lte('next_execution_date', formatLocalDate(new Date()));
     
     if (fetchError) throw fetchError;
     
@@ -522,7 +533,7 @@ export const api = {
           category_id: recurrence.category_id,
           amount: recurrence.amount,
           type: recurrence.type,
-          date: new Date().toISOString().split('T')[0],
+          date: formatLocalDate(new Date()),
           description: recurrence.description || `Recurrente automático`
         });
         
@@ -547,7 +558,7 @@ export const api = {
         // Update next_execution_date
         await supabase
           .from('recurring_transactions')
-          .update({ next_execution_date: nextDate.toISOString().split('T')[0] })
+          .update({ next_execution_date: formatLocalDate(nextDate) })
           .eq('id', recurrence.id);
         
         executedCount++;

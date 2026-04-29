@@ -189,7 +189,7 @@ const RecurringExpenseList: React.FC<RecurringExpenseListProps> = ({ onEdit, onR
                   -{new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(Number(item.amount))}
                 </Typography>
                 <Typography sx={{ color: 'text.secondary', fontSize: '0.7rem', fontWeight: 500 }}>
-                  Próxima: {new Date(item.next_execution_date).toLocaleDateString()}
+                  Próxima: {new Date(item.next_execution_date + 'T00:00:00').toLocaleDateString()}
                 </Typography>
               </Box>
               

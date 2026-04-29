@@ -14,9 +14,12 @@ import {
   CircularProgress,
   Alert,
   IconButton,
+  TablePagination,
   Accordion,
   AccordionSummary,
-  AccordionDetails
+  AccordionDetails,
+  useTheme,
+  useMediaQuery
 } from '@mui/material';
 import {
   KeyboardArrowDown,
@@ -60,6 +63,7 @@ import { useAuthStore } from '../store/useAuthStore';
 import { api, type Category, type Account, type Transaction, type RecurringTransaction } from '../services/api';
 import RecurringExpenseForm from '../components/RecurringExpenseForm';
 import RecurringExpenseList from '../components/RecurringExpenseList';
+import { formatLocalDate } from '../utils/date';
 
 const IconMapper: Record<string, React.ReactNode> = {
   'home': <Home fontSize="small" />,
@@ -102,6 +106,9 @@ const Transactions = () => {
   // Colores de Plataforma (Brand Identity)
   const AZURE_BLUE = '#002D72';
   const SKY_BLUE = '#00A3E0';
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+
 
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -110,32 +117,47 @@ const Transactions = () => {
   const [error, setError] = useState<string | null>(null);
 
   const [type, setType] = useState<'expense' | 'income' | 'transfer'>('expense');
+  const handleTypeChange = (newType: 'expense' | 'income' | 'transfer') => {
+    setType(newType);
+    setPage(0); // Reset page on type change
+  };
   const [amount, setAmount] = useState('');
   const [categoryId, setCategoryId] = useState('');
   const [accountId, setAccountId] = useState('');
   const [toAccountId, setToAccountId] = useState('');
-  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+  const [date, setDate] = useState(formatLocalDate(new Date()));
   const [description, setDescription] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [recurringExpanded, setRecurringExpanded] = useState(false);
+
   const [editingRecurring, setEditingRecurring] = useState<RecurringTransaction | null>(null);
   const [recurringRefreshKey, setRecurringRefreshKey] = useState(0);
+  const [recurringExpanded, setRecurringExpanded] = useState(false);
+
+  
+  // Pagination State
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [totalCount, setTotalCount] = useState(0);
+  const [filterAccountId, setFilterAccountId] = useState('all');
+
 
   const fetchData = async () => {
     try {
       setLoading(true);
 
-      const [accs, cats, trans] = await Promise.all([
+      const [accs, cats, { data: trans, count }] = await Promise.all([
         api.getAccounts(),
         api.getCategories(type === 'transfer' ? 'expense' : type),
-        api.getTransactions()
+        api.getTransactions(page, rowsPerPage, filterAccountId)
       ]);
+
 
 
       setAccounts(accs);
       setCategories(cats);
       setTransactions(trans);
+      setTotalCount(count);
 
       // Lógica de auto-selección de categoría
       if (type === 'transfer') {
@@ -167,7 +189,17 @@ const Transactions = () => {
 
   useEffect(() => {
     fetchData();
-  }, [type]);
+  }, [type, page, rowsPerPage, filterAccountId]);
+
+
+  const handleChangePage = (_event: unknown, newPage: number) => {
+    setPage(newPage);
+  };
+
+  const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setRowsPerPage(parseInt(event.target.value, 10));
+    setPage(0);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -213,7 +245,7 @@ const Transactions = () => {
       setAmount('');
       setDescription('');
       setToAccountId('');
-      setDate(new Date().toISOString().split('T')[0]);
+      setDate(formatLocalDate(new Date()));
       await fetchData();
     } catch (err: any) {
       setError(err.message || 'Error al guardar registro');
@@ -224,7 +256,7 @@ const Transactions = () => {
 
   const handleEditClick = (t: Transaction) => {
     setEditingId(t.id!);
-    setType(t.type);
+    handleTypeChange(t.type);
     setAmount(t.amount.toString());
     setCategoryId(t.category_id);
     setAccountId(t.account_id);
@@ -237,7 +269,7 @@ const Transactions = () => {
     setEditingId(null);
     setAmount('');
     setDescription('');
-    setDate(new Date().toISOString().split('T')[0]);
+    setDate(formatLocalDate(new Date()));
   };
 
   const handleDelete = async (id: string) => {
@@ -280,11 +312,9 @@ const Transactions = () => {
       </Typography>
 
       <Grid container spacing={4} sx={{ alignItems: 'flex-start' }}>
-        {/* COLUMNA IZQUIERDA: FORMULARIO */}
-        <Grid size={{ xs: 12, md: 5, lg: 4.5 }} sx={{ 
-          position: { md: 'sticky' }, 
-          top: { md: 24 } 
-        }}>
+        {/* FILA SUPERIOR: FORMULARIO Y RECURRENTES */}
+        <Grid size={{ xs: 12, md: 6 }}>
+
           <Card sx={{
             bgcolor: 'background.paper',
             borderRadius: '16px',
@@ -303,7 +333,7 @@ const Transactions = () => {
                   mb: 3
                 }}>
                   <Button
-                    onClick={() => setType('expense')}
+                    onClick={() => handleTypeChange('expense')}
                     fullWidth
                     sx={{
                       borderRadius: '10px',
@@ -320,7 +350,7 @@ const Transactions = () => {
                     GASTO
                   </Button>
                   <Button
-                    onClick={() => setType('income')}
+                    onClick={() => handleTypeChange('income')}
                     fullWidth
                     sx={{
                       borderRadius: '10px',
@@ -337,7 +367,7 @@ const Transactions = () => {
                     INGRESO
                   </Button>
                   <Button
-                    onClick={() => setType('transfer')}
+                    onClick={() => handleTypeChange('transfer')}
                     fullWidth
                     sx={{
                       borderRadius: '10px',
@@ -551,16 +581,136 @@ const Transactions = () => {
           </Card>
         </Grid>
 
-        {/* COLUMNA DERECHA: LISTADO */}
-        <Grid size={{ xs: 12, md: 7, lg: 7.5 }}>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+        {/* COLUMNA DERECHA: GASTOS RECURRENTES */}
+        <Grid size={{ xs: 12, md: 6 }}>
+          {isMobile ? (
+            <Accordion 
+              expanded={recurringExpanded}
+              onChange={() => setRecurringExpanded(!recurringExpanded)}
+              sx={{
+                bgcolor: 'background.paper',
+                borderRadius: '16px !important',
+                border: '1px solid rgba(255, 255, 255, 0.05)',
+                '&:before': { display: 'none' },
+                boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
+              }}
+            >
+              <AccordionSummary
+                expandIcon={recurringExpanded ? <KeyboardArrowUp /> : <KeyboardArrowDown />}
+                sx={{
+                  bgcolor: 'rgba(255,255,255,0.02)',
+                  borderRadius: '16px',
+                  '& .MuiAccordionSummary-content': { my: 2 }
+                }}
+              >
+                <Typography variant="h6" sx={{ color: '#FFFFFF', fontWeight: 700 }}>
+                  Gastos Recurrentes
+                </Typography>
+              </AccordionSummary>
+              <AccordionDetails sx={{ p: 3 }}>
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                  <RecurringExpenseForm 
+                    editData={editingRecurring || undefined}
+                    onCancelEdit={() => setEditingRecurring(null)}
+                    onSuccess={() => {
+                      setEditingRecurring(null);
+                      setRecurringRefreshKey(k => k + 1);
+                    }}
+                  />
+                  
+                  <Box sx={{ borderTop: '1px solid rgba(255, 255, 255, 0.05)', pt: 3 }}>
+                    <RecurringExpenseList 
+                      key={recurringRefreshKey}
+                      onEdit={(item) => setEditingRecurring(item)}
+                    />
+                  </Box>
+                </Box>
+              </AccordionDetails>
+            </Accordion>
+          ) : (
+            <Card sx={{
+              bgcolor: 'background.paper',
+              borderRadius: '16px',
+              boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
+              border: '1px solid rgba(255, 255, 255, 0.05)',
+              height: '100%'
+            }}>
+              <CardContent sx={{ p: { xs: 2, md: 3 } }}>
+                <Typography variant="h6" sx={{ color: '#FFFFFF', fontWeight: 700, mb: 3 }}>
+                  Gastos Recurrentes
+                </Typography>
+                
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                  <RecurringExpenseForm 
+                    editData={editingRecurring || undefined}
+                    onCancelEdit={() => setEditingRecurring(null)}
+                    onSuccess={() => {
+                      setEditingRecurring(null);
+                      setRecurringRefreshKey(k => k + 1);
+                    }}
+                  />
+                  
+                  <Box sx={{ borderTop: '1px solid rgba(255, 255, 255, 0.05)', pt: 3 }}>
+                    <RecurringExpenseList 
+                      key={recurringRefreshKey}
+                      onEdit={(item) => setEditingRecurring(item)}
+                    />
+                  </Box>
+                </Box>
+              </CardContent>
+            </Card>
+          )}
+        </Grid>
+
+
+        {/* FILA INFERIOR: LISTADO DE MOVIMIENTOS (FULL WIDTH) */}
+        <Grid size={{ xs: 12 }}>
+
+          <Box sx={{ 
+            display: 'flex', 
+            flexDirection: { xs: 'column', sm: 'row' },
+            justifyContent: 'space-between', 
+            alignItems: { xs: 'flex-start', sm: 'center' }, 
+            gap: 2,
+            mb: 3 
+          }}>
             <Typography variant="h6" sx={{ color: '#FFFFFF', fontWeight: 700 }}>
               Movimientos Recientes
             </Typography>
-            <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-              {transactions.length} registros
-            </Typography>
+            
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, width: { xs: '100%', sm: 'auto' } }}>
+              <TextField
+                select
+                size="small"
+                value={filterAccountId}
+                onChange={(e) => {
+                  setFilterAccountId(e.target.value);
+                  setPage(0);
+                }}
+                sx={{
+                  minWidth: 150,
+                  flex: { xs: 1, sm: 'none' },
+                  '& .MuiOutlinedInput-root': {
+                    bgcolor: 'rgba(255,255,255,0.05)',
+                    borderRadius: '10px',
+                    color: '#FFFFFF',
+                    fontSize: '0.85rem',
+                    '& fieldset': { borderColor: 'rgba(255,255,255,0.1)' },
+                  }
+                }}
+                slotProps={{ select: { IconComponent: KeyboardArrowDown } }}
+              >
+                <MenuItem value="all">Todas las cuentas</MenuItem>
+                {accounts.map((acc) => (
+                  <MenuItem key={acc.id} value={acc.id}>{acc.name}</MenuItem>
+                ))}
+              </TextField>
+              <Typography variant="body2" sx={{ color: 'text.secondary', whiteSpace: 'nowrap' }}>
+                {totalCount} registros
+              </Typography>
+            </Box>
           </Box>
+
 
           <List sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, p: 0 }}>
             <AnimatePresence mode="popLayout">
@@ -608,7 +758,7 @@ const Transactions = () => {
                         {t.description || t.categories?.name}
                       </Typography>
                       <Typography variant="body2" sx={{ color: 'text.secondary', fontSize: '0.8rem' }}>
-                        {t.categories?.name} • {new Date(t.date).toLocaleDateString()}
+                        {t.categories?.name} • {new Date(t.date + 'T00:00:00').toLocaleDateString()}
                       </Typography>
                     </Box>
                   </Box>
@@ -648,58 +798,23 @@ const Transactions = () => {
               ))}
             </AnimatePresence>
           </List>
-        </Grid>
-        
-        {/* SECCIÓN DE GASTOS RECURRENTES */}
-        <Grid size={{ xs: 12 }}>
-          <Accordion 
-            expanded={recurringExpanded}
-            onChange={() => setRecurringExpanded(!recurringExpanded)}
+          <TablePagination
+            component="div"
+            count={totalCount}
+            page={page}
+            onPageChange={handleChangePage}
+            rowsPerPage={rowsPerPage}
+            onRowsPerPageChange={handleChangeRowsPerPage}
+            rowsPerPageOptions={[5, 10, 25]}
+            labelRowsPerPage="Filas por página"
             sx={{
-              bgcolor: 'background.paper',
-              borderRadius: '16px !important',
-              border: '1px solid rgba(255, 255, 255, 0.05)',
-              '&:before': { display: 'none' },
-              mb: 4
+              color: 'text.secondary',
+              '.MuiTablePagination-selectIcon': { color: 'text.secondary' },
+              '.MuiTablePagination-actions': { color: 'text.secondary' }
             }}
-          >
-            <AccordionSummary
-              expandIcon={recurringExpanded ? <KeyboardArrowUp /> : <KeyboardArrowDown />}
-              sx={{
-                bgcolor: 'rgba(255,255,255,0.02)',
-                borderRadius: '16px',
-                '& .MuiAccordionSummary-content': { my: 2 }
-              }}
-            >
-              <Typography variant="h6" sx={{ color: '#FFFFFF', fontWeight: 700 }}>
-                Gastos Recurrentes
-              </Typography>
-            </AccordionSummary>
-            <AccordionDetails sx={{ p: 3 }}>
-              <Grid container spacing={3}>
-                {/* Formulario de nuevo/modificar recurrente */}
-                <Grid size={{ xs: 12, md: 5 }}>
-                  <RecurringExpenseForm 
-                    editData={editingRecurring || undefined}
-                    onCancelEdit={() => setEditingRecurring(null)}
-                    onSuccess={() => {
-                      setEditingRecurring(null);
-                      setRecurringRefreshKey(k => k + 1);
-                    }}
-                  />
-                </Grid>
-                
-                {/* Lista de recurrentes */}
-                <Grid size={{ xs: 12, md: 7 }}>
-                  <RecurringExpenseList 
-                    key={recurringRefreshKey}
-                    onEdit={(item) => setEditingRecurring(item)}
-                  />
-                </Grid>
-              </Grid>
-            </AccordionDetails>
-          </Accordion>
+          />
         </Grid>
+
       </Grid>
     </Box>
   );

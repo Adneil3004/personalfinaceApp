@@ -12,6 +12,7 @@ import {
 import { Add as AddIcon } from '@mui/icons-material';
 import { useAuthStore } from '../store/useAuthStore';
 import { api, type Category, type Account, type RecurringTransaction } from '../services/api';
+import { formatLocalDate } from '../utils/date';
 
 interface RecurringExpenseFormProps {
   onSuccess?: () => void;
@@ -33,7 +34,7 @@ const RecurringExpenseForm: React.FC<RecurringExpenseFormProps> = ({ onSuccess, 
   const [amount, setAmount] = useState('');
   const [frequency, setFrequency] = useState<'monthly' | 'weekly' | 'yearly'>('monthly');
   const [description, setDescription] = useState('');
-  const [nextExecutionDate, setNextExecutionDate] = useState(new Date().toISOString().split('T')[0]);
+  const [nextExecutionDate, setNextExecutionDate] = useState(formatLocalDate(new Date()));
   
   useEffect(() => {
     const fetchData = async () => {
@@ -103,7 +104,7 @@ const RecurringExpenseForm: React.FC<RecurringExpenseFormProps> = ({ onSuccess, 
       // Reset form
       setAmount('');
       setDescription('');
-      setNextExecutionDate(new Date().toISOString().split('T')[0]);
+      setNextExecutionDate(formatLocalDate(new Date()));
       
       if (onSuccess) onSuccess();
     } catch (err: any) {
