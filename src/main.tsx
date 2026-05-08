@@ -6,39 +6,48 @@ import { theme } from './theme';
 import App from './App';
 import './index.css';
 
-// Register service worker for PWA
+// Register and manage service worker for PWA
 if ('serviceWorker' in navigator) {
+  let refreshing = false;
+
+  const updateSW = () => {
+    navigator.serviceWorker.getRegistration().then((registration) => {
+      if (registration) {
+        registration.update();
+      }
+    });
+  };
+
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js')
+    navigator.serviceWorker.register('/sw.js?t=' + Date.now())
       .then((registration) => {
-        console.log('SW registered: ', registration);
+        console.log('SW registered:', registration);
 
-        // Check for updates periodically
-        setInterval(() => {
-          registration.update();
-        }, 60 * 60 * 1000); // Check every hour
+        // Check for updates every 5 minutes
+        setInterval(updateSW, 5 * 60 * 1000);
 
-        // Listen for updates
+        // Detect when a new SW is waiting
         registration.addEventListener('updatefound', () => {
           const newWorker = registration.installing;
           if (newWorker) {
             newWorker.addEventListener('statechange', () => {
-              if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                // New version available - reload page
+              if (newWorker.state === 'installed' && navigator.serviceWorker.controller && !refreshing) {
+                refreshing = true;
                 window.location.reload();
               }
             });
           }
         });
       })
-      .catch((error) => {
-        console.error('SW registration failed: ', error);
-      });
+      .catch((error) => console.error('SW registration failed:', error));
   });
 
-  // Listen for controller change (new SW activated)
+  // Reload when controller changes
   navigator.serviceWorker.addEventListener('controllerchange', () => {
-    window.location.reload();
+    if (!refreshing) {
+      refreshing = true;
+      window.location.reload();
+    }
   });
 }
 

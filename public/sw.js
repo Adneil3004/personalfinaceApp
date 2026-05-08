@@ -1,4 +1,4 @@
-const CACHE_NAME = 'financecontrol-v3';
+const CACHE_NAME = 'financecontrol-v4';
 
 // Assets to cache on install
 const ASSETS = [
@@ -28,28 +28,24 @@ self.addEventListener('activate', (event) => {
       );
     })
   );
-  self.skipWaiting().then(() => {
-    self.clients.claim();
-  });
+  self.skipWaiting().then(() => self.clients.claim());
 });
 
-// Fetch - network first, cache fallback
+// Fetch - network first with cache fallback
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
 
-  // Skip non-GET requests and external requests
+  // Skip non-GET and external requests
   if (event.request.method !== 'GET') return;
   if (url.origin !== location.origin) return;
 
-  // Network first strategy for HTML
-  if (event.request.destination === 'document' || url.pathname.endsWith('.html')) {
+  // Network first for HTML documents
+  if (url.pathname.endsWith('.html') || url.pathname === '/') {
     event.respondWith(
-      fetch(event.request)
+      fetch(event.request, { cache: 'no-store' })
         .then((response) => {
-          const responseClone = response.clone();
-          caches.open(CACHE_NAME).then((cache) => {
-            cache.put(event.request, responseClone);
-          });
+          const clone = response.clone();
+          caches.open(CACHE_NAME).then(c => c.put(event.request, clone));
           return response;
         })
         .catch(() => caches.match(event.request))
@@ -57,28 +53,30 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Cache first for other assets (JS, CSS, images)
+  // Cache first for other assets
   event.respondWith(
     caches.match(event.request).then((cached) => {
-      if (cached) return cached;
+      if (cached) {
+        // Update cache in background
+        fetch(event.request).then((response) => {
+          if (response && response.status === 200) {
+            caches.open(CACHE_NAME).then(c => c.put(event.request, response.clone()));
+          }
+        });
+        return cached;
+      }
 
       return fetch(event.request).then((response) => {
         if (!response || response.status !== 200) return response;
-
-        const responseClone = response.clone();
-        caches.open(CACHE_NAME).then((cache) => {
-          cache.put(event.request, responseClone);
-        });
-
+        const clone = response.clone();
+        caches.open(CACHE_NAME).then(c => c.put(event.request, clone));
         return response;
       });
     })
   );
 });
 
-// Listen for messages from the app
+// Listen for messages from app
 self.addEventListener('message', (event) => {
-  if (event.data && event.data.type === 'SKIP_WAITING') {
-    self.skipWaiting();
-  }
+  if (event.data?.type === 'SKIP_WAITING') self.skipWaiting();
 });
