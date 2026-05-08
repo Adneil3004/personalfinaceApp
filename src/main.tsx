@@ -6,48 +6,28 @@ import { theme } from './theme';
 import App from './App';
 import './index.css';
 
-// Register and manage service worker for PWA
+// PWA Service Worker Registration
 if ('serviceWorker' in navigator) {
-  let refreshing = false;
-
-  const updateSW = () => {
-    navigator.serviceWorker.getRegistration().then((registration) => {
-      if (registration) {
-        registration.update();
-      }
-    });
-  };
-
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js?t=' + Date.now())
+    navigator.serviceWorker.register('/sw.js')
       .then((registration) => {
-        console.log('SW registered:', registration);
+        console.log('SW registered:', registration.scope);
 
-        // Check for updates every 5 minutes
-        setInterval(updateSW, 5 * 60 * 1000);
-
-        // Detect when a new SW is waiting
+        // Listen for updates but DON'T auto-reload on every change
         registration.addEventListener('updatefound', () => {
           const newWorker = registration.installing;
           if (newWorker) {
             newWorker.addEventListener('statechange', () => {
-              if (newWorker.state === 'installed' && navigator.serviceWorker.controller && !refreshing) {
-                refreshing = true;
-                window.location.reload();
+              // Only reload if the new SW actually takes control
+              if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                console.log('New SW available - user can refresh manually');
+                // Don't auto-reload to avoid infinite loop!
               }
             });
           }
         });
       })
       .catch((error) => console.error('SW registration failed:', error));
-  });
-
-  // Reload when controller changes
-  navigator.serviceWorker.addEventListener('controllerchange', () => {
-    if (!refreshing) {
-      refreshing = true;
-      window.location.reload();
-    }
   });
 }
 
