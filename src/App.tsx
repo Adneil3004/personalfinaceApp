@@ -8,7 +8,9 @@ import Register from './views/Register';
 import Dashboard from './views/Dashboard';
 import Transactions from './views/Transactions';
 import Accounts from './views/Accounts';
+import Reports from './views/Reports';
 import Settings from './views/Settings';
+import RewardsCalculator from './views/RewardsCalculator';
 import MainLayout from './components/MainLayout';
 import { Box, CircularProgress } from '@mui/material';
 
@@ -90,7 +92,9 @@ function App() {
           <Route index element={<Dashboard />} />
           <Route path="transactions" element={<Transactions />} />
           <Route path="accounts" element={<Accounts />} />
+          <Route path="reports" element={<Reports />} />
           <Route path="settings" element={<Settings />} />
+          <Route path="rewards" element={<RewardsCalculator />} />
         </Route>
       </Routes>
     </Router>

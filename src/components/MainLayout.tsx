@@ -18,6 +18,8 @@ import {
   AccountBalance as AccountsIcon,
   Settings,
   Menu as MenuIcon,
+  BarChart as BarChartIcon,
+  CardGiftcard,
 } from '@mui/icons-material';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../store/useAuthStore';
@@ -39,6 +41,8 @@ const MainLayout = () => {
     { text: 'Dashboard', icon: <DashboardIcon />, path: '/' },
     { text: 'Transacciones', icon: <ReceiptLong />, path: '/transactions' },
     { text: 'Cuentas', icon: <AccountsIcon />, path: '/accounts' },
+    { text: 'Reportes', icon: <BarChartIcon />, path: '/reports' },
+    { text: 'Premia', icon: <CardGiftcard />, path: '/rewards' },
     { text: 'Configuración', icon: <Settings />, path: '/settings' },
   ];
 
