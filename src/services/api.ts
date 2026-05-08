@@ -221,6 +221,7 @@ export const api = {
 
     const { data, error, count } = await query
       .order('date', { ascending: false })
+      .order('created_at', { ascending: false })
       .range(from, to);
       
     if (error) throw error;
@@ -255,7 +256,8 @@ export const api = {
     const { data: transactions, error: transError } = await supabase
       .from('transactions')
       .select('amount, type, date, description, account_id, categories(name)')
-      .order('date', { ascending: false });
+      .order('date', { ascending: false })
+      .order('created_at', { ascending: false });
     
     if (transError) throw transError;
 

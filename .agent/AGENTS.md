@@ -12,6 +12,7 @@ Construir una plataforma de gestión financiera personal "Precision Finance" con
 | **Inicio una sesión** | [.agent/agent_bootstrap.md](file:///.agent/agent_bootstrap.md) | Preparar el contexto y el rol de Managin. |
 | **Modifico el Backend** | [.agent/skill/backend-architecture.md](file:///.agent/skill/backend-architecture.md) | Mantener Clean Architecture y CQRS. |
 | **Diseño la UI** | [.agent/skill/ui-concierge.md](file:///.agent/skill/ui-concierge.md) | Asegurar estética "Concierge" y refinamiento. |
+| **Audito la economía** | [.agent/skills/financial-advisor/SKILL.md](file:///.agent/skills/financial-advisor/SKILL.md) | Análisis de elite para eficiencia de capital y ahorro. |
 | **Finalizo una tarea** | [.agent/roles/managin/agent_logs.md](file:///.agent/roles/managin/agent_logs.md) | Reportar al Director y actualizar memoria. |
 
 ## 🛡️ Global Guardrails (Barreras de Seguridad)

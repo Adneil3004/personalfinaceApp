@@ -1,28 +1,26 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  Box, 
-  Typography, 
-  Paper, 
-  Grid, 
+import {
+  Box,
+  Typography,
+  Paper,
+  Grid,
   CircularProgress,
-  useTheme,
-  Card,
-  CardContent
+  useTheme
 } from '@mui/material';
-import { 
-  BarChart, 
-  Bar, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
-  ResponsiveContainer, 
-  Cell, 
-  PieChart, 
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  Cell,
+  PieChart,
   Pie,
   Legend
 } from 'recharts';
-import { api, type Transaction } from '../services/api';
+import { api } from '../services/api';
 
 const Reports: React.FC = () => {
   const theme = useTheme();
@@ -116,7 +114,7 @@ const Reports: React.FC = () => {
 
       <Grid container spacing={3}>
         {/* Gráfico de Balance Histórico */}
-        <Grid item xs={12} md={8}>
+        <Grid size={{ xs: 12, md: 8 }}>
           <Paper sx={{ p: 3, borderRadius: 2, minHeight: 450, boxShadow: '0 4px 20px rgba(0,0,0,0.05)' }}>
             <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
               Balance Histórico (Ingresos vs Gastos)
@@ -125,25 +123,20 @@ const Reports: React.FC = () => {
               <ResponsiveContainer>
                 <BarChart data={monthlyData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.05)" />
-                  <XAxis 
-                    dataKey="name" 
-                    axisLine={false} 
-                    tickLine={false} 
-                    tick={{ fill: theme.palette.text.secondary, fontSize: 12 }} 
+                  <XAxis
+                    dataKey="name"
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{ fill: theme.palette.text.secondary, fontSize: 12 }}
                   />
-                  <YAxis 
-                    axisLine={false} 
-                    tickLine={false} 
+                  <YAxis
+                    axisLine={false}
+                    tickLine={false}
                     tick={{ fill: theme.palette.text.secondary, fontSize: 12 }}
                     tickFormatter={(value) => `$${value}`}
                   />
-                  <Tooltip 
-                    formatter={(value: number, name: string, props: any) => {
-                      if (name === 'Ingresos' || name === 'Gastos') {
-                        return [formatCurrency(value), name];
-                      }
-                      return [formatCurrency(value), name];
-                    }}
+                  <Tooltip
+                    formatter={(value) => formatCurrency(Number(value))}
                     labelFormatter={(label) => {
                       const data = monthlyData.find(d => d.name === label);
                       if (data) {
@@ -151,11 +144,11 @@ const Reports: React.FC = () => {
                       }
                       return label;
                     }}
-                    contentStyle={{ 
-                      backgroundColor: theme.palette.background.paper, 
-                      borderRadius: 8, 
+                    contentStyle={{
+                      backgroundColor: theme.palette.background.paper,
+                      borderRadius: 8,
                       border: 'none',
-                      boxShadow: '0 4px 20px rgba(0,0,0,0.2)' 
+                      boxShadow: '0 4px 20px rgba(0,0,0,0.2)'
                     }}
                   />
                   <Legend verticalAlign="top" align="right" height={36}/>
@@ -168,7 +161,7 @@ const Reports: React.FC = () => {
         </Grid>
 
         {/* Gráfico por Cuenta */}
-        <Grid item xs={12} md={4}>
+        <Grid size={{ xs: 12, md: 4 }}>
           <Paper sx={{ p: 3, borderRadius: 2, minHeight: 450, boxShadow: '0 4px 20px rgba(0,0,0,0.05)' }}>
             <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
               Distribución por Cuenta
@@ -189,7 +182,7 @@ const Reports: React.FC = () => {
                       <Cell key={`cell-${index}`} fill={entry.color} />
                     ))}
                   </Pie>
-                  <Tooltip formatter={(value: number) => formatCurrency(value)} />
+                  <Tooltip formatter={(value) => formatCurrency(Number(value))} />
                   <Legend verticalAlign="bottom" height={36}/>
                 </PieChart>
               </ResponsiveContainer>
