@@ -29,6 +29,9 @@ export interface Transaction {
   type: 'income' | 'expense' | 'transfer';
   date: string;
   description?: string;
+  is_msi?: boolean;
+  msi_total_installments?: number;
+  msi_current_installment?: number;
   
   // Relations when fetched
   categories?: { name: string; icon: string; color: string };
@@ -46,6 +49,9 @@ export interface RecurringTransaction {
   next_execution_date: string;
   description?: string;
   is_active?: boolean;
+  is_msi?: boolean;
+  msi_total_installments?: number;
+  msi_current_installment?: number;
   created_at?: string;
   updated_at?: string;
   
@@ -528,6 +534,15 @@ export const api = {
     
     for (const recurrence of (recurrences || [])) {
       try {
+        const isMSI = recurrence.is_msi;
+        const currentInstallment = (recurrence.msi_current_installment || 1);
+        const totalInstallments = recurrence.msi_total_installments;
+        
+        let description = recurrence.description || `Recurrente automático`;
+        if (isMSI && totalInstallments) {
+          description = `${description} (${currentInstallment}/${totalInstallments})`;
+        }
+
         // Create the transaction
         await supabase.from('transactions').insert({
           user_id: recurrence.user_id,
@@ -535,8 +550,11 @@ export const api = {
           category_id: recurrence.category_id,
           amount: recurrence.amount,
           type: recurrence.type,
-          date: formatLocalDate(new Date()),
-          description: recurrence.description || `Recurrente automático`
+          date: recurrence.next_execution_date,
+          description,
+          is_msi: isMSI,
+          msi_total_installments: totalInstallments,
+          msi_current_installment: currentInstallment
         });
         
         // Calculate next execution date
@@ -557,10 +575,22 @@ export const api = {
             nextDate = this.addMonths(currentDate, 1);
         }
         
-        // Update next_execution_date
+        // Prepare update
+        const updateData: any = { next_execution_date: formatLocalDate(nextDate) };
+        
+        if (isMSI && totalInstallments) {
+          const nextInstallment = currentInstallment + 1;
+          if (nextInstallment > totalInstallments) {
+            updateData.is_active = false;
+          } else {
+            updateData.msi_current_installment = nextInstallment;
+          }
+        }
+
+        // Update recurring record
         await supabase
           .from('recurring_transactions')
-          .update({ next_execution_date: formatLocalDate(nextDate) })
+          .update(updateData)
           .eq('id', recurrence.id);
         
         executedCount++;
@@ -571,5 +601,57 @@ export const api = {
     }
     
     return { executed: executedCount, errors };
+  },
+
+  // --- MSI Plans ---
+  async createMSIPlan(transaction: Transaction, totalInstallments: number): Promise<void> {
+    const monthlyAmount = Number((transaction.amount / totalInstallments).toFixed(2));
+    const firstInstallmentDate = transaction.date;
+    
+    // 1. Create the first installment immediately
+    await this.createTransaction({
+      ...transaction,
+      amount: monthlyAmount,
+      is_msi: true,
+      msi_total_installments: totalInstallments,
+      msi_current_installment: 1,
+      description: `${transaction.description} (1/${totalInstallments})`
+    });
+
+    // 2. Create the recurring plan starting next month
+    if (totalInstallments > 1) {
+      const nextDate = this.addMonths(new Date(firstInstallmentDate), 1);
+      const { error } = await supabase
+        .from('recurring_transactions')
+        .insert([{
+          account_id: transaction.account_id,
+          category_id: transaction.category_id,
+          amount: monthlyAmount,
+          type: transaction.type,
+          frequency: 'monthly',
+          next_execution_date: formatLocalDate(nextDate),
+          description: transaction.description,
+          is_msi: true,
+          msi_total_installments: totalInstallments,
+          msi_current_installment: 2,
+          is_active: true
+        }]);
+        
+      if (error) throw error;
+    }
+  },
+
+  async getMSIPlans(): Promise<any[]> {
+    const { data, error } = await supabase
+      .from('recurring_transactions')
+      .select(`
+        *,
+        categories (name, icon, color),
+        accounts (name)
+      `)
+      .eq('is_msi', true);
+      
+    if (error) throw error;
+    return data || [];
   }
 };

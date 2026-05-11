@@ -9,6 +9,7 @@ import {
   CircularProgress
 } from '@mui/material';
 import { api } from '../services/api';
+import MSITracker from '../components/MSITracker';
 import {
   TrendingUp,
   TrendingDown,
@@ -286,6 +287,8 @@ const Dashboard = () => {
           </Box>
         ))}
       </Box>
+
+      <MSITracker />
 
       <Grid container spacing={3}>
         {/* CHART: ACTIVIDAD DE GASTOS */}

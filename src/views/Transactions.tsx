@@ -18,6 +18,8 @@ import {
   Accordion,
   AccordionSummary,
   AccordionDetails,
+  FormControlLabel,
+  Switch,
   useTheme,
   useMediaQuery
 } from '@mui/material';
@@ -129,6 +131,8 @@ const Transactions = () => {
   const [description, setDescription] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [isMSI, setIsMSI] = useState(false);
+  const [installments, setInstallments] = useState('12');
 
   const [editingRecurring, setEditingRecurring] = useState<RecurringTransaction | null>(null);
   const [recurringRefreshKey, setRecurringRefreshKey] = useState(0);
@@ -237,6 +241,8 @@ const Transactions = () => {
         if (editingId) {
           await api.updateTransaction(editingId, transactionData);
           setEditingId(null);
+        } else if (isMSI && type === 'expense') {
+          await api.createMSIPlan(transactionData as any, parseInt(installments));
         } else {
           await api.createTransaction(transactionData as any);
         }
@@ -245,6 +251,7 @@ const Transactions = () => {
       setAmount('');
       setDescription('');
       setToAccountId('');
+      setIsMSI(false);
       setDate(formatLocalDate(new Date()));
       await fetchData();
     } catch (err: any) {
@@ -545,7 +552,58 @@ const Transactions = () => {
                         }
                       }}
                     />
-                  </Box>
+                  {type === 'expense' && !editingId && (
+                    <Box sx={{ 
+                      bgcolor: 'rgba(255,255,255,0.02)', 
+                      p: 2, 
+                      borderRadius: '12px', 
+                      border: '1px solid rgba(255,255,255,0.05)',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: 2
+                    }}>
+                      <FormControlLabel
+                        control={
+                          <Switch 
+                            checked={isMSI} 
+                            onChange={(e) => setIsMSI(e.target.checked)} 
+                            color="primary"
+                          />
+                        }
+                        label={
+                          <Typography variant="body2" sx={{ fontWeight: 600, color: isMSI ? '#fff' : 'text.secondary' }}>
+                            ¿Pagar a meses (MSI)?
+                          </Typography>
+                        }
+                      />
+                      
+                      {isMSI && (
+                        <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }}>
+                          <Typography sx={{ color: 'text.secondary', fontWeight: 700, fontSize: '0.7rem', mb: 1 }}>
+                            NÚMERO DE MENSUALIDADES
+                          </Typography>
+                          <TextField
+                            select
+                            fullWidth
+                            value={installments}
+                            onChange={(e) => setInstallments(e.target.value)}
+                            variant="outlined"
+                            sx={{
+                              '& .MuiOutlinedInput-root': {
+                                bgcolor: 'rgba(255,255,255,0.03)',
+                                borderRadius: '10px',
+                                '& fieldset': { borderColor: 'rgba(255,255,255,0.1)' },
+                              }
+                            }}
+                          >
+                            {[3, 6, 9, 12, 18, 24].map((n) => (
+                              <MenuItem key={n} value={n.toString()}>{n} meses</MenuItem>
+                            ))}
+                          </TextField>
+                        </motion.div>
+                      )}
+                    </Box>
+                  )}
                 </Box>
 
                 <Box sx={{ mt: 4, display: 'flex', flexDirection: 'column', gap: 2 }}>
@@ -575,6 +633,7 @@ const Transactions = () => {
                       Cancelar Edición
                     </Button>
                   )}
+                  </Box>
                 </Box>
               </Box>
             </CardContent>
