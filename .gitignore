@@ -38,3 +38,5 @@ AVANCES_24 ABR 2026.md
 .agent/
 .atl/
 openspec/
+.worktrees/
+worktrees/
