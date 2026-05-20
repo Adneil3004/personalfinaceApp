@@ -275,13 +275,15 @@ const DailyBudget = () => {
       <Dialog
         open={openDialog}
         onClose={() => setOpenDialog(false)}
-        PaperProps={{
-          sx: {
-            bgcolor: '#111927',
-            backgroundImage: 'none',
-            borderRadius: '20px',
-            border: '1px solid rgba(255,255,255,0.1)',
-            p: 1
+        slotProps={{
+          paper: {
+            sx: {
+              bgcolor: '#111927',
+              backgroundImage: 'none',
+              borderRadius: '20px',
+              border: '1px solid rgba(255,255,255,0.1)',
+              p: 1
+            }
           }
         }}
       >
@@ -298,7 +300,9 @@ const DailyBudget = () => {
               value={operatingLimit}
               onChange={(e) => setOperatingLimit(e.target.value)}
               fullWidth
-              InputLabelProps={{ shrink: true }}
+              slotProps={{
+                inputLabel: { shrink: true }
+              }}
               sx={{
                 '& .MuiOutlinedInput-root': {
                   color: '#FFFFFF',
@@ -315,7 +319,9 @@ const DailyBudget = () => {
               value={discretionaryLimit}
               onChange={(e) => setDiscretionaryLimit(e.target.value)}
               fullWidth
-              InputLabelProps={{ shrink: true }}
+              slotProps={{
+                inputLabel: { shrink: true }
+              }}
               sx={{
                 '& .MuiOutlinedInput-root': {
                   color: '#FFFFFF',
