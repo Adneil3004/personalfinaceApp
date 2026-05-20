@@ -54,6 +54,20 @@ export interface RecurringTransaction {
   accounts?: { name: string };
 }
 
+export interface UserSettings {
+  id: string;
+  user_id: string;
+  daily_operating_limit: number;
+  daily_discretionary_limit: number;
+}
+
+export interface DailyBudgetStats {
+  operatingLimit: number;
+  discretionaryLimit: number;
+  leftover: number;
+  discretionarySpentThisMonth: number;
+}
+
 export const api = {
   // --- Categories ---
   async getCategories(type?: 'income' | 'expense'): Promise<Category[]> {
@@ -571,5 +585,98 @@ export const api = {
     }
     
     return { executed: executedCount, errors };
+  },
+
+  async getUserSettings(): Promise<UserSettings> {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('No user authenticated');
+
+    const { data, error } = await supabase
+      .from('user_settings')
+      .select('*')
+      .eq('user_id', user.id)
+      .maybeSingle();
+
+    if (error) throw error;
+
+    if (!data) {
+      // Retorna valores por defecto
+      return {
+        id: '',
+        user_id: user.id,
+        daily_operating_limit: 456.49,
+        daily_discretionary_limit: 193.33
+      };
+    }
+
+    return {
+      id: data.id,
+      user_id: data.user_id,
+      daily_operating_limit: Number(data.daily_operating_limit),
+      daily_discretionary_limit: Number(data.daily_discretionary_limit)
+    };
+  },
+
+  async updateUserSettings(limits: { daily_operating_limit: number; daily_discretionary_limit: number }): Promise<UserSettings> {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('No user authenticated');
+
+    const { data, error } = await supabase
+      .from('user_settings')
+      .upsert({
+        user_id: user.id,
+        daily_operating_limit: limits.daily_operating_limit,
+        daily_discretionary_limit: limits.daily_discretionary_limit
+      }, { onConflict: 'user_id' })
+      .select()
+      .single();
+
+    if (error) throw error;
+    
+    return {
+      id: data.id,
+      user_id: data.user_id,
+      daily_operating_limit: Number(data.daily_operating_limit),
+      daily_discretionary_limit: Number(data.daily_discretionary_limit)
+    };
+  },
+
+  async getDailyBudgetStats(): Promise<DailyBudgetStats> {
+    const settings = await this.getUserSettings();
+    
+    const now = new Date();
+    const currentDay = now.getDate();
+    
+    const startOfMonth = formatLocalDate(new Date(now.getFullYear(), now.getMonth(), 1));
+    
+    // Categorías discrecionales ("gustos/salidas")
+    const discretionaryCategories = ['Restaurantes', 'Ropa', 'Entretenimiento', 'Gustos', 'Salidas', 'Ant', 'Café', 'Delivery', 'Ocio', 'Regalos'];
+    
+    // Obtener transacciones del mes en curso
+    const { data: transactions, error } = await supabase
+      .from('transactions')
+      .select('amount, date, categories(name)')
+      .eq('type', 'expense')
+      .gte('date', startOfMonth);
+      
+    if (error) throw error;
+    
+    const discretionarySpent = (transactions || [])
+      .filter(t => {
+        const catName = (t.categories as any)?.name || '';
+        return discretionaryCategories.some(c => catName.toLowerCase().includes(c.toLowerCase()));
+      })
+      .reduce((sum, t) => sum + Number(t.amount), 0);
+      
+    // Sobrante acumulado = (días transcurridos * límite diario de gustos) - gastado en el mes
+    const accumulatedBudget = currentDay * settings.daily_discretionary_limit;
+    const leftover = accumulatedBudget - discretionarySpent;
+    
+    return {
+      operatingLimit: settings.daily_operating_limit,
+      discretionaryLimit: settings.daily_discretionary_limit,
+      leftover,
+      discretionarySpentThisMonth: discretionarySpent
+    };
   }
 };

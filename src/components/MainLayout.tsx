@@ -20,6 +20,7 @@ import {
   Menu as MenuIcon,
   BarChart as BarChartIcon,
   CardGiftcard,
+  AccountBalanceWallet,
 } from '@mui/icons-material';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../store/useAuthStore';
@@ -39,6 +40,7 @@ const MainLayout = () => {
 
   const navItems = [
     { text: 'Dashboard', icon: <DashboardIcon />, path: '/' },
+    { text: 'Presupuesto', icon: <AccountBalanceWallet />, path: '/daily-budget' },
     { text: 'Transacciones', icon: <ReceiptLong />, path: '/transactions' },
     { text: 'Cuentas', icon: <AccountsIcon />, path: '/accounts' },
     { text: 'Reportes', icon: <BarChartIcon />, path: '/reports' },
