@@ -12,6 +12,7 @@ export interface Category {
 
 export interface Account {
   id: string;
+  user_id: string;
   name: string;
   type: 'checking' | 'cash' | 'credit';
   currency: string;

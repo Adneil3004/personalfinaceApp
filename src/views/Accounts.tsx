@@ -41,6 +41,7 @@ import {
   TrendingDown,
 } from '@mui/icons-material';
 import { api, type Account } from '../services/api';
+import { useAuthStore } from '../store/useAuthStore';
 import { motion } from 'framer-motion';
 import useMediaQuery from '@mui/material/useMediaQuery';
 
@@ -154,6 +155,7 @@ const KpiCard = ({
 // ─── Main View ────────────────────────────────────────────────────────────────
 
 const Accounts = () => {
+  const { user } = useAuthStore();
   const [accounts, setAccounts] = React.useState<Account[]>([]);
   const [stats, setStats] = React.useState<any>(null);
   const [loading, setLoading] = React.useState(true);
@@ -212,6 +214,7 @@ const Accounts = () => {
 
   const handleSave = async () => {
     if (!form.name.trim()) { setFormError('El nombre es requerido.'); return; }
+    if (!user) { setFormError('Usuario no autenticado.'); return; }
     setSaving(true);
     setFormError('');
     try {
@@ -222,6 +225,7 @@ const Accounts = () => {
       }
 
       const payload = {
+        user_id: user.id,
         name: form.name.trim(),
         type: form.type,
         currency: form.currency,
