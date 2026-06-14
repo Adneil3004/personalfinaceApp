@@ -40,7 +40,7 @@ const MainLayout = () => {
 
   const navItems = [
     { text: 'Dashboard', icon: <DashboardIcon />, path: '/' },
-    { text: 'Presupuesto', icon: <AccountBalanceWallet />, path: '/daily-budget' },
+    { text: 'Gasto Diario', icon: <AccountBalanceWallet />, path: '/daily-budget' },
     { text: 'Transacciones', icon: <ReceiptLong />, path: '/transactions' },
     { text: 'Cuentas', icon: <AccountsIcon />, path: '/accounts' },
     { text: 'Reportes', icon: <BarChartIcon />, path: '/reports' },
