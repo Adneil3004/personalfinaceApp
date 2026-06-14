@@ -1,4 +1,4 @@
-const CACHE_NAME = 'financecontrol-v5';
+const CACHE_NAME = `financecontrol-${__APP_VERSION__}`;
 
 // Assets to cache on install
 const ASSETS = [
