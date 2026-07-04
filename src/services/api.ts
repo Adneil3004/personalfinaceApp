@@ -240,6 +240,27 @@ export const api = {
     };
   },
 
+  async getAccountExpenses(accountId: string, startDate?: string, endDate?: string): Promise<Transaction[]> {
+    let query = supabase
+      .from('transactions')
+      .select(`
+        *,
+        categories (name, icon, color)
+      `)
+      .eq('account_id', accountId)
+      .eq('type', 'expense');
+
+    if (startDate) query = query.gte('date', startDate);
+    if (endDate) query = query.lte('date', endDate);
+
+    const { data, error } = await query
+      .order('date', { ascending: false })
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+    return data as Transaction[];
+  },
+
   async createTransaction(transaction: Transaction): Promise<Transaction> {
     const { data, error } = await supabase
       .from('transactions')

@@ -21,6 +21,7 @@ import {
   BarChart as BarChartIcon,
   CardGiftcard,
   AccountBalanceWallet,
+  CreditCard,
 } from '@mui/icons-material';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../store/useAuthStore';
@@ -44,6 +45,7 @@ const MainLayout = () => {
     { text: 'Transacciones', icon: <ReceiptLong />, path: '/transactions' },
     { text: 'Cuentas', icon: <AccountsIcon />, path: '/accounts' },
     { text: 'Reportes', icon: <BarChartIcon />, path: '/reports' },
+    { text: 'Gastos por Tarjeta', icon: <CreditCard />, path: '/card-report' },
     { text: 'Premia', icon: <CardGiftcard />, path: '/rewards' },
     { text: 'Configuración', icon: <Settings />, path: '/settings' },
   ];

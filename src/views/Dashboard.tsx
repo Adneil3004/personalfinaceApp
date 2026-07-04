@@ -27,7 +27,8 @@ import {
   ResponsiveContainer,
   PieChart,
   Pie,
-  Cell
+  Cell,
+  Label
 } from 'recharts';
 import { motion } from 'framer-motion';
 
@@ -354,11 +355,11 @@ const Dashboard = () => {
                 {stats?.expensesByCategory?.length > 0 ? (
                   <>
                     {/* Gráfico (Ancho Flexible) */}
-                    <Box sx={{ 
-                      flex: { xs: '0 0 280px', md: 1 }, 
+                    <Box sx={{
+                      flex: { xs: '0 0 280px', md: 1 },
                       minWidth: { xs: '100%', md: 240 },
                       height: { xs: 280, md: 320 },
-                      display: 'flex',
+                      display: { xs: 'none', md: 'flex' },
                       alignItems: 'center',
                       justifyContent: 'center'
                     }}>
@@ -366,17 +367,34 @@ const Dashboard = () => {
                         <PieChart>
                           <Pie
                             data={stats.expensesByCategory}
-                            innerRadius="60%"
-                            outerRadius="90%"
-                            paddingAngle={0}
+                            innerRadius="58%"
+                            outerRadius="85%"
+                            paddingAngle={2}
                             dataKey="value"
                             stroke="none"
                           >
-                            {stats.expensesByCategory.map((entry: any, index: number) => (
+                            <Label
+                              content={({ viewBox }) => {
+                                const { cx, cy } = viewBox as { cx: number; cy: number };
+                                const total = stats.expensesByCategory.reduce((s: number, c: { value: number }) => s + c.value, 0);
+                                return (
+                                  <g>
+                                    <text x={cx} y={cy - 10} textAnchor="middle" fill="#94A3B8" fontSize={11} fontWeight={600}>
+                                      Total mes
+                                    </text>
+                                    <text x={cx} y={cy + 12} textAnchor="middle" fill="#FFFFFF" fontSize={14} fontWeight={800}>
+                                      {formatCurrency(total)}
+                                    </text>
+                                  </g>
+                                );
+                              }}
+                              position="center"
+                            />
+                            {stats.expensesByCategory.map((entry: { color: string }, index: number) => (
                               <Cell key={`cell-${index}`} fill={entry.color} />
                             ))}
                           </Pie>
-                          <Tooltip 
+                          <Tooltip
                             formatter={formatTooltipValue}
                             contentStyle={{ backgroundColor: '#111927', border: 'none', borderRadius: '12px', boxShadow: '0 8px 32px rgba(0,0,0,0.4)', color: '#fff' }}
                             itemStyle={{ color: '#fff' }}
@@ -386,59 +404,67 @@ const Dashboard = () => {
                     </Box>
 
                     {/* Lista (Ancho Fijo) */}
-                    <Box sx={{ 
-                      width: { xs: '100%', md: '320px' }, 
+                    <Box sx={{
+                      width: { xs: '100%', md: '320px' },
                       flexShrink: 0,
-                      maxHeight: { xs: 400, md: 320 }, 
-                      overflowY: 'auto', 
+                      maxHeight: { xs: 400, md: 320 },
+                      overflowY: 'auto',
                       pr: { xs: 0, md: 1 },
                       display: 'flex',
                       flexDirection: 'column',
                       gap: 1.5,
                       '&::-webkit-scrollbar': { width: '4px' },
                       '&::-webkit-scrollbar-track': { bgcolor: 'rgba(255,255,255,0.02)' },
-                      '&::-webkit-scrollbar-thumb': { 
-                        bgcolor: 'rgba(255,255,255,0.1)', 
+                      '&::-webkit-scrollbar-thumb': {
+                        bgcolor: 'rgba(255,255,255,0.1)',
                         borderRadius: '10px'
                       }
                     }}>
-                      {stats.expensesByCategory.sort((a: any, b: any) => b.value - a.value).map((cat: any) => {
-                        const totalExpenses = stats.expensesByCategory.reduce((sum: number, c: any) => sum + c.value, 0);
+                      {stats.expensesByCategory.sort((a: { value: number }, b: { value: number }) => b.value - a.value).map((cat: { name: string; value: number; color: string }) => {
+                        const totalExpenses = stats.expensesByCategory.reduce((sum: number, c: { value: number }) => sum + c.value, 0);
                         const percentage = totalExpenses > 0 ? (cat.value / totalExpenses) * 100 : 0;
-                        
+
                         return (
                           <Box key={cat.name} sx={{ width: '100%' }}>
-                            <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
-                              <Typography variant="caption" sx={{ 
-                                fontWeight: 700, 
-                                fontSize: { xs: '0.65rem', sm: '0.75rem' },
-                                whiteSpace: 'nowrap',
-                                overflow: 'hidden',
-                                textOverflow: 'ellipsis',
-                                maxWidth: '70%'
-                              }}>
-                                {cat.name}
-                              </Typography>
-                              <Typography variant="caption" sx={{ fontWeight: 800, fontSize: { xs: '0.65rem', sm: '0.75rem' } }}>
-                                {formatCurrency(cat.value)}
-                              </Typography>
+                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 0.5, gap: 1 }}>
+                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, minWidth: 0 }}>
+                                <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: cat.color, flexShrink: 0 }} />
+                                <Typography variant="caption" sx={{
+                                  fontWeight: 700,
+                                  fontSize: { xs: '0.65rem', sm: '0.75rem' },
+                                  whiteSpace: 'nowrap',
+                                  overflow: 'hidden',
+                                  textOverflow: 'ellipsis',
+                                }}>
+                                  {cat.name}
+                                </Typography>
+                              </Box>
+                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexShrink: 0 }}>
+                                <Typography variant="caption" sx={{ fontWeight: 800, fontSize: { xs: '0.65rem', sm: '0.75rem' }, color: cat.color }}>
+                                  {percentage.toFixed(1)}%
+                                </Typography>
+                                <Typography variant="caption" sx={{ fontWeight: 800, fontSize: { xs: '0.65rem', sm: '0.75rem' } }}>
+                                  {formatCurrency(cat.value)}
+                                </Typography>
+                              </Box>
                             </Box>
-                            
-                            <Box sx={{ 
+
+                            <Box sx={{
                               position: 'relative',
-                              width: '100%', 
-                              height: { xs: 20, sm: 26 }, 
-                              bgcolor: 'rgba(255,255,255,0.03)', 
-                              borderRadius: '4px',
+                              width: '100%',
+                              height: { xs: 20, sm: 24 },
+                              bgcolor: 'rgba(255,255,255,0.03)',
+                              borderRadius: '6px',
                               overflow: 'hidden',
                               border: '1px solid rgba(255,255,255,0.05)'
                             }}>
-                              <Box sx={{ 
-                                width: `${percentage}%`, 
-                                height: '100%', 
+                              <Box sx={{
+                                width: `${percentage}%`,
+                                height: '100%',
                                 bgcolor: cat.color,
-                                borderRadius: '2px',
-                                transition: 'width 1s ease-in-out'
+                                borderRadius: '4px',
+                                transition: 'width 1s ease-in-out',
+                                opacity: 0.85
                               }} />
                             </Box>
                           </Box>
@@ -462,25 +488,44 @@ const Dashboard = () => {
                 Saldos por Cuenta
               </Typography>
               <Box sx={{ height: 400, width: '100%', display: 'flex', flexDirection: { xs: 'column', lg: 'row' }, alignItems: 'center', justifyContent: 'center', gap: 4 }}>
-                {stats?.accountBalances?.some((a: any) => a.balance > 0) ? (
+                {stats?.accountBalances?.some((a: { balance: number }) => a.balance > 0) ? (
                   <>
-                    <Box sx={{ width: { xs: '100%', lg: '50%' }, height: 320 }}>
+                    <Box sx={{ width: { xs: '100%', lg: '50%' }, height: 320, display: { xs: 'none', md: 'block' } }}>
                       <ResponsiveContainer>
                         <PieChart>
-                            <Pie
-                              data={stats.accountBalances.filter((a: any) => a.balance > 0)}
-                              innerRadius={80}
-                              outerRadius={130}
-                              paddingAngle={0}
-                              dataKey="balance"
-                              nameKey="name"
-                              stroke="none"
-                              strokeWidth={0}
-                            >
-                              {stats.accountBalances.filter((a: any) => a.balance > 0).map((entry: any, index: number) => (
-                                <Cell key={`cell-${index}`} fill={entry.color} stroke="none" strokeWidth={0} />
-                              ))}
-                            </Pie>
+                          <Pie
+                            data={stats.accountBalances.filter((a: { balance: number }) => a.balance > 0)}
+                            innerRadius={80}
+                            outerRadius={130}
+                            paddingAngle={2}
+                            dataKey="balance"
+                            nameKey="name"
+                            stroke="none"
+                            strokeWidth={0}
+                          >
+                            <Label
+                              content={({ viewBox }) => {
+                                const { cx, cy } = viewBox as { cx: number; cy: number };
+                                const total = stats.accountBalances
+                                  .filter((a: { balance: number }) => a.balance > 0)
+                                  .reduce((s: number, a: { balance: number }) => s + a.balance, 0);
+                                return (
+                                  <g>
+                                    <text x={cx} y={cy - 10} textAnchor="middle" fill="#94A3B8" fontSize={11} fontWeight={600}>
+                                      Total activos
+                                    </text>
+                                    <text x={cx} y={cy + 12} textAnchor="middle" fill="#FFFFFF" fontSize={14} fontWeight={800}>
+                                      {formatCurrency(total)}
+                                    </text>
+                                  </g>
+                                );
+                              }}
+                              position="center"
+                            />
+                            {stats.accountBalances.filter((a: { balance: number }) => a.balance > 0).map((entry: { color: string }, index: number) => (
+                              <Cell key={`cell-${index}`} fill={entry.color} stroke="none" strokeWidth={0} />
+                            ))}
+                          </Pie>
                           <Tooltip
                             formatter={formatTooltipValue}
                             contentStyle={{ backgroundColor: '#111927', border: 'none', borderRadius: '12px', boxShadow: '0 8px 32px rgba(0,0,0,0.4)', color: '#fff' }}
@@ -489,38 +534,69 @@ const Dashboard = () => {
                         </PieChart>
                       </ResponsiveContainer>
                     </Box>
-                    <Box sx={{ 
-                      width: { xs: '100%', lg: '50%' }, 
-                      maxHeight: 300, 
-                      overflowY: 'auto', 
+                    <Box sx={{
+                      width: { xs: '100%', lg: '50%' },
+                      maxHeight: 300,
+                      overflowY: 'auto',
                       pr: 2,
                       '&::-webkit-scrollbar': { width: '4px' },
                       '&::-webkit-scrollbar-track': { bgcolor: 'transparent' },
                       '&::-webkit-scrollbar-thumb': { bgcolor: 'rgba(255,255,255,0.1)', borderRadius: '10px' }
                     }}>
                       <Grid container spacing={2}>
-                        {stats.accountBalances.filter((a: any) => a.balance > 0).sort((a: any, b: any) => b.balance - a.balance).map((acc: any) => (
-                          <Grid size={{ xs: 12, sm: 6, lg: 12 }} key={acc.name}>
-                            <Box sx={{ 
-                              p: 2, 
-                              borderRadius: '12px', 
-                              bgcolor: 'rgba(255,255,255,0.02)', 
-                              border: '1px solid rgba(255,255,255,0.05)',
-                              transition: 'transform 0.2s',
-                              '&:hover': { transform: 'translateX(4px)', bgcolor: 'rgba(255,255,255,0.04)' }
-                            }}>
-                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 0.5 }}>
-                                <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: acc.color }} />
-                                <Typography variant="caption" sx={{ fontWeight: 700, color: 'text.secondary', letterSpacing: '0.05em', textTransform: 'uppercase' }}>
-                                  {acc.name}
-                                </Typography>
-                              </Box>
-                              <Typography variant="h6" sx={{ fontSize: '1.2rem', fontWeight: 850, color: '#FFFFFF' }}>
-                                {new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(acc.balance)}
-                              </Typography>
-                            </Box>
-                          </Grid>
-                        ))}
+                        {(() => {
+                          const positives = stats.accountBalances.filter((a: { balance: number }) => a.balance > 0);
+                          const total = positives.reduce((s: number, a: { balance: number }) => s + a.balance, 0);
+                          return positives
+                            .sort((a: { balance: number }, b: { balance: number }) => b.balance - a.balance)
+                            .map((acc: { name: string; balance: number; color: string }) => {
+                              const pct = total > 0 ? (acc.balance / total) * 100 : 0;
+                              return (
+                                <Grid size={{ xs: 12, sm: 6, lg: 12 }} key={acc.name}>
+                                  <Box sx={{
+                                    p: 2,
+                                    borderRadius: '12px',
+                                    bgcolor: 'rgba(255,255,255,0.02)',
+                                    border: '1px solid rgba(255,255,255,0.05)',
+                                    transition: 'transform 0.2s',
+                                    '&:hover': { transform: 'translateX(4px)', bgcolor: 'rgba(255,255,255,0.04)' }
+                                  }}>
+                                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 0.5 }}>
+                                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                                        <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: acc.color }} />
+                                        <Typography variant="caption" sx={{ fontWeight: 700, color: 'text.secondary', letterSpacing: '0.05em', textTransform: 'uppercase' }}>
+                                          {acc.name}
+                                        </Typography>
+                                      </Box>
+                                      <Typography variant="caption" sx={{ fontWeight: 700, color: acc.color, fontSize: '0.75rem' }}>
+                                        {pct.toFixed(1)}%
+                                      </Typography>
+                                    </Box>
+                                    <Box sx={{ mt: 0.5, mb: 1 }}>
+                                      <Box sx={{
+                                        width: '100%',
+                                        height: 4,
+                                        bgcolor: 'rgba(255,255,255,0.05)',
+                                        borderRadius: '4px',
+                                        overflow: 'hidden'
+                                      }}>
+                                        <Box sx={{
+                                          width: `${pct}%`,
+                                          height: '100%',
+                                          bgcolor: acc.color,
+                                          borderRadius: '4px',
+                                          transition: 'width 1s ease-in-out'
+                                        }} />
+                                      </Box>
+                                    </Box>
+                                    <Typography variant="h6" sx={{ fontSize: '1.1rem', fontWeight: 850, color: '#FFFFFF' }}>
+                                      {new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(acc.balance)}
+                                    </Typography>
+                                  </Box>
+                                </Grid>
+                              );
+                            });
+                        })()}
                       </Grid>
                     </Box>
                   </>

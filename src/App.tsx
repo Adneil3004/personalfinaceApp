@@ -12,6 +12,7 @@ import Reports from './views/Reports';
 import Settings from './views/Settings';
 import RewardsCalculator from './views/RewardsCalculator';
 import DailyBudget from './views/DailyBudget';
+import CardReport from './views/CardReport';
 import MainLayout from './components/MainLayout';
 import { Box, CircularProgress } from '@mui/material';
 
@@ -97,6 +98,7 @@ function App() {
           <Route path="settings" element={<Settings />} />
           <Route path="rewards" element={<RewardsCalculator />} />
           <Route path="daily-budget" element={<DailyBudget />} />
+          <Route path="card-report" element={<CardReport />} />
         </Route>
       </Routes>
     </Router>
