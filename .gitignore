@@ -40,3 +40,7 @@ AVANCES_24 ABR 2026.md
 openspec/
 .worktrees/
 worktrees/
+.vercel
+
+# MCP configuration with credentials
+.mcp.json

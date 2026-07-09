@@ -46,6 +46,8 @@ integridad referencial (borrados en cascada, índices).
 
 
 ## 🛠️ Estándares Técnicos
+
+- **MCP Config**: Consultar `.agent/configuracionMCP.md` para referencias de MCPs disponibles (Engram, Context7, GitHub, Supabase).
 - **Idioma del Sitio**: Todo el texto visible de la aplicación debe estar en **Español**. Esto incluye:
   - Labels, botones, mensajes, placeholders, tooltips, títulos, descripciones
   - Modal titles y messages
