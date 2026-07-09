@@ -631,19 +631,20 @@ const Transactions = () => {
         {/* FILA INFERIOR: LISTADO DE MOVIMIENTOS (FULL WIDTH) */}
         <Grid size={{ xs: 12 }}>
 
-          <Box sx={{ 
-            display: 'flex', 
+          <Box sx={{
+            display: 'flex',
             flexDirection: { xs: 'column', sm: 'row' },
-            justifyContent: 'space-between', 
-            alignItems: { xs: 'flex-start', sm: 'center' }, 
+            justifyContent: 'space-between',
+            alignItems: { xs: 'flex-start', sm: 'center' },
+            flexWrap: 'wrap',
             gap: 2,
-            mb: 3 
+            mb: 3
           }}>
             <Typography variant="h6" sx={{ color: '#FFFFFF', fontWeight: 700 }}>
               Movimientos Recientes
             </Typography>
-            
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, width: { xs: '100%', sm: 'auto' } }}>
+
+            <Box sx={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 1.5, width: { xs: '100%', sm: 'auto' } }}>
               <TextField
                 select
                 size="small"
@@ -681,7 +682,7 @@ const Transactions = () => {
                 }}
                 slotProps={{ inputLabel: { shrink: true } }}
                 sx={{
-                  minWidth: 140,
+                  minWidth: 130,
                   flex: { xs: 1, sm: 'none' },
                   '& .MuiOutlinedInput-root': {
                     bgcolor: 'rgba(255,255,255,0.05)',
@@ -704,7 +705,7 @@ const Transactions = () => {
                 }}
                 slotProps={{ inputLabel: { shrink: true } }}
                 sx={{
-                  minWidth: 140,
+                  minWidth: 130,
                   flex: { xs: 1, sm: 'none' },
                   '& .MuiOutlinedInput-root': {
                     bgcolor: 'rgba(255,255,255,0.05)',
