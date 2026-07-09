@@ -212,7 +212,7 @@ export const api = {
   },
 
   // --- Transactions ---
-  async getTransactions(page: number = 0, pageSize: number = 10, accountId?: string): Promise<{ data: Transaction[], count: number }> {
+  async getTransactions(page: number = 0, pageSize: number = 10, accountId?: string, startDate?: string, endDate?: string): Promise<{ data: Transaction[], count: number }> {
     const from = page * pageSize;
     const to = from + pageSize - 1;
 
@@ -227,6 +227,9 @@ export const api = {
     if (accountId && accountId !== 'all') {
       query = query.eq('account_id', accountId);
     }
+
+    if (startDate) query = query.gte('date', startDate);
+    if (endDate) query = query.lte('date', endDate);
 
     const { data, error, count } = await query
       .order('date', { ascending: false })

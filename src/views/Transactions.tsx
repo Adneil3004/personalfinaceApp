@@ -17,13 +17,12 @@ import {
   TablePagination,
   Accordion,
   AccordionSummary,
-  AccordionDetails,
-  useTheme,
-  useMediaQuery
+  AccordionDetails
 } from '@mui/material';
 import {
   KeyboardArrowDown,
   KeyboardArrowUp,
+  Close,
   Help,
   Home,
   ShoppingCart,
@@ -106,8 +105,6 @@ const Transactions = () => {
   // Colores de Plataforma (Brand Identity)
   const AZURE_BLUE = '#002D72';
   const SKY_BLUE = '#00A3E0';
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
 
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -140,6 +137,8 @@ const Transactions = () => {
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [totalCount, setTotalCount] = useState(0);
   const [filterAccountId, setFilterAccountId] = useState('all');
+  const [filterStartDate, setFilterStartDate] = useState('');
+  const [filterEndDate, setFilterEndDate] = useState('');
 
 
   const fetchData = async () => {
@@ -149,7 +148,7 @@ const Transactions = () => {
       const [accs, cats, { data: trans, count }] = await Promise.all([
         api.getAccounts(),
         api.getCategories(type === 'transfer' ? 'expense' : type),
-        api.getTransactions(page, rowsPerPage, filterAccountId)
+        api.getTransactions(page, rowsPerPage, filterAccountId, filterStartDate || undefined, filterEndDate || undefined)
       ]);
 
 
@@ -189,7 +188,7 @@ const Transactions = () => {
 
   useEffect(() => {
     fetchData();
-  }, [type, page, rowsPerPage, filterAccountId]);
+  }, [type, page, rowsPerPage, filterAccountId, filterStartDate, filterEndDate]);
 
 
   const handleChangePage = (_event: unknown, newPage: number) => {
@@ -583,83 +582,49 @@ const Transactions = () => {
 
         {/* COLUMNA DERECHA: GASTOS RECURRENTES */}
         <Grid size={{ xs: 12, md: 6 }}>
-          {isMobile ? (
-            <Accordion 
-              expanded={recurringExpanded}
-              onChange={() => setRecurringExpanded(!recurringExpanded)}
+          <Accordion
+            expanded={recurringExpanded}
+            onChange={() => setRecurringExpanded(!recurringExpanded)}
+            sx={{
+              bgcolor: 'background.paper',
+              borderRadius: '16px !important',
+              border: '1px solid rgba(255, 255, 255, 0.05)',
+              '&:before': { display: 'none' },
+              boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
+            }}
+          >
+            <AccordionSummary
+              expandIcon={recurringExpanded ? <KeyboardArrowUp /> : <KeyboardArrowDown />}
               sx={{
-                bgcolor: 'background.paper',
-                borderRadius: '16px !important',
-                border: '1px solid rgba(255, 255, 255, 0.05)',
-                '&:before': { display: 'none' },
-                boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
+                bgcolor: 'rgba(255,255,255,0.02)',
+                borderRadius: '16px',
+                '& .MuiAccordionSummary-content': { my: 2 }
               }}
             >
-              <AccordionSummary
-                expandIcon={recurringExpanded ? <KeyboardArrowUp /> : <KeyboardArrowDown />}
-                sx={{
-                  bgcolor: 'rgba(255,255,255,0.02)',
-                  borderRadius: '16px',
-                  '& .MuiAccordionSummary-content': { my: 2 }
-                }}
-              >
-                <Typography variant="h6" sx={{ color: '#FFFFFF', fontWeight: 700 }}>
-                  Gastos Recurrentes
-                </Typography>
-              </AccordionSummary>
-              <AccordionDetails sx={{ p: 3 }}>
-                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-                  <RecurringExpenseForm 
-                    editData={editingRecurring || undefined}
-                    onCancelEdit={() => setEditingRecurring(null)}
-                    onSuccess={() => {
-                      setEditingRecurring(null);
-                      setRecurringRefreshKey(k => k + 1);
-                    }}
-                  />
-                  
-                  <Box sx={{ borderTop: '1px solid rgba(255, 255, 255, 0.05)', pt: 3 }}>
-                    <RecurringExpenseList 
-                      key={recurringRefreshKey}
-                      onEdit={(item) => setEditingRecurring(item)}
-                    />
-                  </Box>
-                </Box>
-              </AccordionDetails>
-            </Accordion>
-          ) : (
-            <Card sx={{
-              bgcolor: 'background.paper',
-              borderRadius: '16px',
-              boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
-              border: '1px solid rgba(255, 255, 255, 0.05)',
-              height: '100%'
-            }}>
-              <CardContent sx={{ p: { xs: 2, md: 3 } }}>
-                <Typography variant="h6" sx={{ color: '#FFFFFF', fontWeight: 700, mb: 3 }}>
-                  Gastos Recurrentes
-                </Typography>
+              <Typography variant="h6" sx={{ color: '#FFFFFF', fontWeight: 700 }}>
+                Gastos Recurrentes
+              </Typography>
+            </AccordionSummary>
+            <AccordionDetails sx={{ p: 3 }}>
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                <RecurringExpenseForm 
+                  editData={editingRecurring || undefined}
+                  onCancelEdit={() => setEditingRecurring(null)}
+                  onSuccess={() => {
+                    setEditingRecurring(null);
+                    setRecurringRefreshKey(k => k + 1);
+                  }}
+                />
                 
-                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-                  <RecurringExpenseForm 
-                    editData={editingRecurring || undefined}
-                    onCancelEdit={() => setEditingRecurring(null)}
-                    onSuccess={() => {
-                      setEditingRecurring(null);
-                      setRecurringRefreshKey(k => k + 1);
-                    }}
+                <Box sx={{ borderTop: '1px solid rgba(255, 255, 255, 0.05)', pt: 3 }}>
+                  <RecurringExpenseList 
+                    key={recurringRefreshKey}
+                    onEdit={(item) => setEditingRecurring(item)}
                   />
-                  
-                  <Box sx={{ borderTop: '1px solid rgba(255, 255, 255, 0.05)', pt: 3 }}>
-                    <RecurringExpenseList 
-                      key={recurringRefreshKey}
-                      onEdit={(item) => setEditingRecurring(item)}
-                    />
-                  </Box>
                 </Box>
-              </CardContent>
-            </Card>
-          )}
+              </Box>
+            </AccordionDetails>
+          </Accordion>
         </Grid>
 
 
@@ -705,6 +670,66 @@ const Transactions = () => {
                   <MenuItem key={acc.id} value={acc.id}>{acc.name}</MenuItem>
                 ))}
               </TextField>
+              <TextField
+                type="date"
+                size="small"
+                label="Desde"
+                value={filterStartDate}
+                onChange={(e) => {
+                  setFilterStartDate(e.target.value);
+                  setPage(0);
+                }}
+                slotProps={{ inputLabel: { shrink: true } }}
+                sx={{
+                  minWidth: 140,
+                  flex: { xs: 1, sm: 'none' },
+                  '& .MuiOutlinedInput-root': {
+                    bgcolor: 'rgba(255,255,255,0.05)',
+                    borderRadius: '10px',
+                    color: '#FFFFFF',
+                    fontSize: '0.85rem',
+                    '& fieldset': { borderColor: 'rgba(255,255,255,0.1)' },
+                  },
+                  '& .MuiInputLabel-root': { color: 'text.secondary' }
+                }}
+              />
+              <TextField
+                type="date"
+                size="small"
+                label="Hasta"
+                value={filterEndDate}
+                onChange={(e) => {
+                  setFilterEndDate(e.target.value);
+                  setPage(0);
+                }}
+                slotProps={{ inputLabel: { shrink: true } }}
+                sx={{
+                  minWidth: 140,
+                  flex: { xs: 1, sm: 'none' },
+                  '& .MuiOutlinedInput-root': {
+                    bgcolor: 'rgba(255,255,255,0.05)',
+                    borderRadius: '10px',
+                    color: '#FFFFFF',
+                    fontSize: '0.85rem',
+                    '& fieldset': { borderColor: 'rgba(255,255,255,0.1)' },
+                  },
+                  '& .MuiInputLabel-root': { color: 'text.secondary' }
+                }}
+              />
+              {(filterStartDate || filterEndDate) && (
+                <IconButton
+                  size="small"
+                  onClick={() => {
+                    setFilterStartDate('');
+                    setFilterEndDate('');
+                    setPage(0);
+                  }}
+                  sx={{ color: 'text.secondary' }}
+                  aria-label="Limpiar filtro de fecha"
+                >
+                  <Close fontSize="small" />
+                </IconButton>
+              )}
               <Typography variant="body2" sx={{ color: 'text.secondary', whiteSpace: 'nowrap' }}>
                 {totalCount} registros
               </Typography>
