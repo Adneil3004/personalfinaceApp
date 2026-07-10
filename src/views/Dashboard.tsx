@@ -47,6 +47,13 @@ const formatCurrency = (value: number): string => {
   return new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(value);
 };
 
+// Formatea la fecha de inicio del periodo catorcenal (ej. "Desde 27 jun")
+const formatPeriodStart = (dateStr?: string): string | undefined => {
+  if (!dateStr) return undefined;
+  const label = new Date(dateStr + 'T00:00:00').toLocaleDateString('es-MX', { day: 'numeric', month: 'short' });
+  return `Desde ${label}`;
+};
+
 // Tooltip formatter helper
 const formatTooltipValue = (value: any): string => {
   if (typeof value === 'number') {
@@ -76,7 +83,7 @@ const EmptyStateChart = ({ message = "No hay datos para mostrar" }) => (
   </Box>
 );
 
-const SummaryCard = ({ title, value, icon, trend, color, highlighted = false, statusText }: any) => {
+const SummaryCard = ({ title, value, icon, trend, color, highlighted = false, statusText, subtitle }: any) => {
   return (
     <motion.div whileHover={{ y: -5 }} transition={{ duration: 0.2 }} style={{ height: '100%', width: '100%' }}>
       <Card sx={{
@@ -158,9 +165,9 @@ const SummaryCard = ({ title, value, icon, trend, color, highlighted = false, st
               {formatCurrency(value)}
             </Typography>
             {statusText && (
-              <Typography variant="caption" sx={{ 
-                color: highlighted ? 'rgba(255,255,255,0.8)' : color, 
-                fontWeight: 700, 
+              <Typography variant="caption" sx={{
+                color: highlighted ? 'rgba(255,255,255,0.8)' : color,
+                fontWeight: 700,
                 textTransform: 'uppercase',
                 fontSize: '0.65rem',
                 letterSpacing: '0.05em',
@@ -168,6 +175,16 @@ const SummaryCard = ({ title, value, icon, trend, color, highlighted = false, st
                 display: 'block'
               }}>
                 {statusText}
+              </Typography>
+            )}
+            {subtitle && (
+              <Typography variant="caption" sx={{
+                color: highlighted ? 'rgba(255,255,255,0.6)' : 'text.secondary',
+                fontSize: '0.7rem',
+                mt: 0.5,
+                display: 'block'
+              }}>
+                {subtitle}
               </Typography>
             )}
           </Box>
@@ -243,18 +260,20 @@ const Dashboard = () => {
             highlighted: true
           },
           {
-            title: "Gastos del Mes",
-            value: stats?.monthlyExpenses || 0,
+            title: "Gastos (Catorcena)",
+            value: stats?.biweeklyExpenses || 0,
             icon: <ShoppingBag />,
-            color: "#FDB022"
+            color: "#FDB022",
+            subtitle: formatPeriodStart(stats?.payPeriodStart)
           },
           {
-            title: (stats?.monthlySavings || 0) >= 0 ? "Superávit Mensual" : "Déficit Mensual",
-            value: stats?.monthlySavings || 0,
-            icon: (stats?.monthlySavings || 0) >= 0 ? <TrendingUp /> : <TrendingDown />,
-            color: (stats?.monthlySavings || 0) >= 0 ? "#039855" : "#D92D20",
-            highlighted: (stats?.monthlySavings || 0) < 0,
-            statusText: (stats?.monthlySavings || 0) >= 0 ? "Saludable" : "Requiere Atención"
+            title: (stats?.biweeklySavings || 0) >= 0 ? "Superávit (Catorcena)" : "Déficit (Catorcena)",
+            value: stats?.biweeklySavings || 0,
+            icon: (stats?.biweeklySavings || 0) >= 0 ? <TrendingUp /> : <TrendingDown />,
+            color: (stats?.biweeklySavings || 0) >= 0 ? "#039855" : "#D92D20",
+            highlighted: (stats?.biweeklySavings || 0) < 0,
+            subtitle: formatPeriodStart(stats?.payPeriodStart),
+            statusText: (stats?.biweeklySavings || 0) >= 0 ? "Saludable" : "Requiere Atención"
           },
           {
             title: "Capital (Débito)",

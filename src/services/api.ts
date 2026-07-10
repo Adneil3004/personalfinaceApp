@@ -1,5 +1,5 @@
 import { supabase } from './supabase';
-import { formatLocalDate } from '../utils/date';
+import { formatLocalDate, getCurrentPayPeriodStart } from '../utils/date';
 
 export interface Category {
   id: string;
@@ -335,6 +335,19 @@ export const api = {
     const monthlyExpenses = flattenedTransactions?.filter(t => t.type === 'expense' && t.date >= startOfMonth && t.category_name?.toLowerCase() !== 'transferencia')
                                        .reduce((acc, curr) => acc + Number(curr.amount), 0) || 0;
 
+    // Inicio del periodo catorcenal vigente: nómina cada 14 días, viernes (ver getCurrentPayPeriodStart)
+    const payPeriodStart = getCurrentPayPeriodStart(now);
+
+    const biweeklyIncome = flattenedTransactions
+      .filter(t => t.type === 'income' && t.date >= payPeriodStart)
+      .reduce((acc, curr) => acc + Number(curr.amount), 0);
+
+    const biweeklyExpenses = flattenedTransactions
+      .filter(t => t.type === 'expense' && t.date >= payPeriodStart && t.category_name?.toLowerCase() !== 'transferencia')
+      .reduce((acc, curr) => acc + Number(curr.amount), 0);
+
+    const biweeklySavings = biweeklyIncome - biweeklyExpenses;
+
     // --- Stats for Charts ---
     
     // 1. Expenses by Category (EXCLUIR transferencias entre cuentas)
@@ -384,6 +397,9 @@ export const api = {
       monthlyIncome,
       monthlyExpenses,
       monthlySavings,
+      payPeriodStart,
+      biweeklyExpenses,
+      biweeklySavings,
       creditLimit,
       recentTransactions: flattenedTransactions.slice(0, 5),
       expensesByCategory,
