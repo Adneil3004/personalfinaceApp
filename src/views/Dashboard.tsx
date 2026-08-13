@@ -626,6 +626,108 @@ const Dashboard = () => {
             </CardContent>
           </Card>
         </Grid>
+
+        {/* CHART: GASTOS ACUMULADOS DEL AÑO */}
+        <Grid size={{ xs: 12 }}>
+          <Card sx={{ height: { xs: 620, md: 460 }, borderRadius: '16px' }}>
+            <CardContent sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: { xs: 'flex-start', sm: 'center' }, flexDirection: { xs: 'column', sm: 'row' }, gap: 1, mb: 3 }}>
+                <Box>
+                  <Typography variant="h6" sx={{ fontWeight: 700, mb: 0.5 }}>
+                    Gastos Acumulados del Año
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    Del 1 de enero a hoy, divididos por categoría
+                  </Typography>
+                </Box>
+                <Box sx={{ textAlign: { xs: 'left', sm: 'right' } }}>
+                  <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                    Gasto anual
+                  </Typography>
+                  <Typography variant="h5" sx={{ fontWeight: 850, color: '#FFFFFF' }}>
+                    {formatCurrency(stats?.yearlyExpenses || 0)}
+                  </Typography>
+                </Box>
+              </Box>
+              {stats?.yearlyExpensesByCategory?.length > 0 ? (
+                <Box sx={{
+                  flex: 1,
+                  minHeight: 0,
+                  display: 'flex',
+                  flexDirection: { xs: 'column', md: 'row' },
+                  alignItems: 'center',
+                  gap: 3
+                }}>
+                  <Box sx={{ width: { xs: '100%', md: '45%' }, height: { xs: 260, md: 340 } }}>
+                    <ResponsiveContainer>
+                      <PieChart>
+                        <Pie
+                          data={stats.yearlyExpensesByCategory}
+                          innerRadius="58%"
+                          outerRadius="85%"
+                          paddingAngle={2}
+                          dataKey="value"
+                          nameKey="name"
+                          stroke="none"
+                        >
+                          <Label
+                            content={({ viewBox }) => {
+                              const { cx, cy } = viewBox as { cx: number; cy: number };
+                              return (
+                                <g>
+                                  <text x={cx} y={cy - 10} textAnchor="middle" fill="#94A3B8" fontSize={11} fontWeight={600}>
+                                    Total gastado
+                                  </text>
+                                  <text x={cx} y={cy + 12} textAnchor="middle" fill="#FFFFFF" fontSize={14} fontWeight={800}>
+                                    {formatCurrency(stats.yearlyExpenses || 0)}
+                                  </text>
+                                </g>
+                              );
+                            }}
+                            position="center"
+                          />
+                          {stats.yearlyExpensesByCategory.map((entry: { color: string }, index: number) => (
+                            <Cell key={`yearly-expense-cell-${index}`} fill={entry.color} />
+                          ))}
+                        </Pie>
+                        <Tooltip
+                          formatter={formatTooltipValue}
+                          contentStyle={{ backgroundColor: '#111927', border: 'none', borderRadius: '12px', boxShadow: '0 8px 32px rgba(0,0,0,0.4)', color: '#fff' }}
+                          itemStyle={{ color: '#fff' }}
+                        />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </Box>
+                  <Box sx={{ width: { xs: '100%', md: '55%' }, maxHeight: { xs: 230, md: 330 }, overflowY: 'auto', pr: 1 }}>
+                    {stats.yearlyExpensesByCategory.map((category: { name: string; value: number; color: string }) => {
+                      const percentage = stats.yearlyExpenses > 0 ? (category.value / stats.yearlyExpenses) * 100 : 0;
+                      return (
+                        <Box key={category.name} sx={{ mb: 2 }}>
+                          <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 1, mb: 0.75 }}>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, minWidth: 0 }}>
+                              <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: category.color, flexShrink: 0 }} />
+                              <Typography variant="body2" sx={{ fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                {category.name}
+                              </Typography>
+                            </Box>
+                            <Typography variant="body2" sx={{ fontWeight: 800, color: category.color, flexShrink: 0 }}>
+                              {formatCurrency(category.value)} ({percentage.toFixed(1)}%)
+                            </Typography>
+                          </Box>
+                          <Box sx={{ height: 8, bgcolor: 'rgba(255,255,255,0.05)', borderRadius: 1, overflow: 'hidden' }}>
+                            <Box sx={{ width: `${percentage}%`, height: '100%', bgcolor: category.color, borderRadius: 1 }} />
+                          </Box>
+                        </Box>
+                      );
+                    })}
+                  </Box>
+                </Box>
+              ) : (
+                <EmptyStateChart message="No hay gastos registrados en lo que va del año" />
+              )}
+            </CardContent>
+          </Card>
+        </Grid>
       </Grid>
     </Box>
   );

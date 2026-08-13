@@ -279,6 +279,8 @@ export const api = {
   async getDashboardStats() {
     const now = new Date();
     const startOfMonth = formatLocalDate(new Date(now.getFullYear(), now.getMonth(), 1));
+    const startOfYear = formatLocalDate(new Date(now.getFullYear(), 0, 1));
+    const today = formatLocalDate(now);
 
     // Get Total Balance (Sum of all accounts)
     const { data: accounts, error: accError } = await supabase.from('accounts').select('id, name, initial_balance, type, credit_limit');
@@ -334,6 +336,33 @@ export const api = {
 
     const monthlyExpenses = flattenedTransactions?.filter(t => t.type === 'expense' && t.date >= startOfMonth && t.category_name?.toLowerCase() !== 'transferencia')
                                        .reduce((acc, curr) => acc + Number(curr.amount), 0) || 0;
+
+    const yearlyExpenses = flattenedTransactions?.filter(t =>
+      t.type === 'expense'
+      && t.date >= startOfYear
+      && t.date <= today
+      && t.category_name?.toLowerCase() !== 'transferencia'
+    ).reduce((acc, curr) => acc + Number(curr.amount), 0) || 0;
+
+    const yearlyCategoryMap = flattenedTransactions
+      .filter(t =>
+        t.type === 'expense'
+        && t.date >= startOfYear
+        && t.date <= today
+        && t.category_name?.toLowerCase() !== 'transferencia'
+      )
+      .reduce((acc: Record<string, number>, curr) => {
+        acc[curr.category_name] = (acc[curr.category_name] || 0) + Number(curr.amount);
+        return acc;
+      }, {});
+
+    const yearlyExpensesByCategory = Object.entries(yearlyCategoryMap)
+      .map(([name, value], index) => ({
+        name,
+        value,
+        color: ['#00A3E0', '#316ee9', '#002D72', '#81cfff', '#039855', '#D92D20', '#FDB022'][index % 7]
+      }))
+      .sort((a, b) => b.value - a.value);
 
     // Inicio del periodo catorcenal vigente: nómina cada 14 días, viernes (ver getCurrentPayPeriodStart)
     const payPeriodStart = getCurrentPayPeriodStart(now);
@@ -396,6 +425,8 @@ export const api = {
       totalDebt,
       monthlyIncome,
       monthlyExpenses,
+      yearlyExpenses,
+      yearlyExpensesByCategory,
       monthlySavings,
       payPeriodStart,
       biweeklyExpenses,
